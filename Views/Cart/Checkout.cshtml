@@ -1,0 +1,81 @@
+@model CuoiKy.ViewModels.Cart
+@{
+    ViewData["Title"] = "Thanh toán";
+}
+
+<div class="container py-5">
+    <h2 class="fw-bold mb-4">Thanh toán đơn hàng</h2>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <div>@TempData["ErrorMessage"]</div>
+        </div>
+    }
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white fw-bold py-3">
+                    Thông tin giao hàng
+                </div>
+                <div class="card-body">
+                    <form asp-action="ProcessCheckout" method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Họ và tên người nhận</label>
+                            <input type="text" name="customerName" class="form-control" required value="@User.Identity?.Name" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Số điện thoại</label>
+                            <input type="tel" name="phoneNumber" class="form-control" 
+                            required 
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '');" 
+                            maxlength="10" 
+                            pattern="^0[0-9]{9}$" 
+                            title="Vui lòng nhập số điện thoại hợp lệ (10 chữ số, bắt đầu bằng số 0)" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Địa chỉ giao hàng chi tiết</label>
+                            <textarea name="shippingAddress" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Phương thức thanh toán</label>
+                            <select name="paymentMethod" class="form-select">
+                                <option value="0">Thanh toán khi nhận hàng (COD)</option>
+                                <option value="1">Chuyển khoản ngân hàng</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg w-100 mt-3">Xác nhận đặt hàng</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white fw-bold py-3">
+                    Đơn hàng của bạn
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush mb-3">
+                        @foreach (var item in Model.Items.Where(i => i.IsSelected))
+                        {
+                            <li class="list-group-item d-flex justify-content-between lh-sm px-0">
+                                <div>
+                                    <h6 class="my-0">@item.Name</h6>
+                                    <small class="text-muted">Số lượng: @item.Quantity</small>
+                                </div>
+                                <span class="text-muted">@((item.Price * item.Quantity).ToString("N0"))₫</span>
+                            </li>
+                        }
+                    </ul>
+                    <div class="d-flex justify-content-between fw-bold fs-5 border-top pt-3">
+                        <span>Tổng cộng</span>
+                        <span class="text-danger">@Model.GetTotalPrice().ToString("N0")₫</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

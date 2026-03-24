@@ -1,0 +1,84 @@
+@model CuoiKy.Models.Product
+@{
+    ViewData["Title"] = Model.Name + " - TechStore";
+}
+
+<style>
+    .product-detail-img {
+        max-height: 500px;
+        object-fit: contain;
+        background: #f9f9f9;
+        border-radius: 15px;
+        padding: 20px;
+    }
+    .price-tag-detail {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #e31e24;
+    }
+    .stock-status {
+        font-size: 1.1rem;
+    }
+    .stock-status.in-stock {
+        color: #28a745;
+    }
+    .stock-status.out-of-stock {
+        color: #dc3545;
+    }
+    .product-description {
+        line-height: 1.8;
+        color: #555;
+    }
+</style>
+
+<div class="container py-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Product" asp-action="Index">Sản phẩm</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@Model.Name</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-6 mb-4 mb-lg-0">
+            <div class="text-center shadow-sm p-3 rounded">
+                <img src="@(!string.IsNullOrEmpty(Model.ImageUrl) ? Model.ImageUrl : "/lib/img/no-image.png")" 
+                     class="product-detail-img img-fluid" alt="@Model.Name">
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <h1 class="fw-bold display-5">@Model.Name</h1>
+            <p class="text-muted">Loại sản phẩm: <span class="badge bg-secondary">@(Model.Category?.Name ?? "-")</span></p>
+            
+            <div class="my-4">
+                <p class="price-tag-detail">@Model.Price.ToString("N0")₫</p>
+                @if (Model.StockQuantity > 0)
+                {
+                    <p class="stock-status in-stock fw-bold">
+                        <i class="fas fa-check-circle me-2"></i>Còn hàng (còn @Model.StockQuantity sản phẩm)
+                    </p>
+                }
+                else
+                {
+                    <p class="stock-status out-of-stock fw-bold">
+                        <i class="fas fa-times-circle me-2"></i>Hết hàng
+                    </p>
+                }
+            </div>
+
+            <div class="product-description mb-4">
+                <h5 class="fw-bold">Mô tả sản phẩm</h5>
+                <p>@Html.Raw(Model.Description?.Replace("\n", "<br />"))</p>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="button" class="btn btn-primary btn-lg shadow-sm" onclick="addToCart(@Model.Id)" @(Model.StockQuantity <= 0 ? "disabled" : "")>
+                    <i class="fas fa-cart-plus me-2"></i>Thêm vào giỏ hàng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- You can add related products section here -->
+</div>

@@ -1,0 +1,175 @@
+@model IEnumerable<CuoiKy.Models.Product>
+@{
+    ViewData["Title"] = "TechStore - Danh sách sản phẩm";
+    var currentCategory = ViewBag.CurrentCategory as string;
+}
+
+<style>
+    .product-img-container {
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 15px;
+        background: #fff;
+    }
+    .product-img-container img {
+        max-height: 100%;
+        max-width: 100%;
+        object-fit: contain;
+    }
+    .section-title {
+        border-left: 5px solid #008BFF;
+        padding-left: 15px;
+        margin-bottom: 25px;
+        font-weight: bold;
+    }
+
+    .category-row {
+        margin-bottom: 28px;
+    }
+    .category-row-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+    .category-row-title {
+        font-weight: 800;
+        font-size: 1.1rem;
+    }
+    .category-products-scroll {
+        display: flex;
+        overflow-x: auto;
+        gap: 16px;
+        padding-bottom: 10px;
+        scrollbar-width: thin;
+    }
+    .category-products-scroll::-webkit-scrollbar {
+        height: 6px;
+    }
+    .category-products-scroll::-webkit-scrollbar-thumb {
+        background: #008BFF;
+        border-radius: 10px;
+    }
+    .category-products-scroll .product-item {
+        flex: 0 0 240px;
+    }
+</style>
+
+<div class="container py-5">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    @(!string.IsNullOrEmpty(currentCategory) ? currentCategory : "Tất cả sản phẩm")
+                </li>
+            </ol>
+        </nav>
+        <h3 class="section-title">
+            @(!string.IsNullOrEmpty(currentCategory) ? $"Danh mục: {currentCategory}" : "Tất cả sản phẩm")
+        </h3>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        if (string.IsNullOrEmpty(currentCategory))
+        {
+            var groups = Model
+                .Where(p => p.Category != null)
+                .GroupBy(p => p.Category!.Name)
+                .OrderBy(g => g.Key)
+                .ToList();
+
+            foreach (var g in groups)
+            {
+                <div class="category-row">
+                    <div class="category-row-header">
+                        <div class="category-row-title">@g.Key</div>
+                        <a class="btn btn-outline-primary btn-sm" asp-controller="Product" asp-action="List" asp-route-category="@g.Key">Xem tất cả</a>
+                    </div>
+                    <div class="category-products-scroll">
+                        @foreach (var item in g.OrderByDescending(x => x.Id).Take(10))
+                        {
+                            <div class="product-item">
+                                <div class="card h-100 border-0 shadow-sm product-card">
+                                    <div class="product-img-container">
+                                        @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                        {
+                                            <img src="@item.ImageUrl" alt="@item.Name">
+                                        }
+                                        else
+                                        {
+                                            <img src="/lib/img/no-image.png" alt="No Image">
+                                        }
+                                    </div>
+                                    <div class="card-body">
+                                        <h6 class="card-title text-truncate" title="@item.Name">@item.Name</h6>
+                                        <p class="text-danger fw-bold mb-1">@item.Price.ToString("N0")₫</p>
+                                        <div class="d-grid gap-2 mt-3">
+                                            <a asp-controller="Product" asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Chi tiết</a>
+                                            @if (item.StockQuantity <= 0)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-secondary w-100" disabled>Hết hàng</button>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" class="btn btn-sm btn-primary w-100" onclick="addToCart(@item.Id)">Thêm vào giỏ hàng</button>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var item in Model)
+                {
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div class="card h-100 border-0 shadow-sm product-card">
+                            <div class="product-img-container">
+                                @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                {
+                                    <img src="@item.ImageUrl" alt="@item.Name">
+                                }
+                                else
+                                {
+                                    <img src="/lib/img/no-image.png" alt="No Image">
+                                }
+                            </div>
+                            <div class="card-body">
+                                <h6 class="card-title text-truncate" title="@item.Name">@item.Name</h6>
+                                <p class="text-danger fw-bold mb-1">@item.Price.ToString("N0")₫</p>
+                                <div class="d-grid gap-2 mt-3">
+                                    <a asp-controller="Product" asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Chi tiết</a>
+                                    @if (item.StockQuantity <= 0)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-secondary w-100" disabled>Hết hàng</button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn btn-sm btn-primary w-100" onclick="addToCart(@item.Id)">Thêm vào giỏ hàng</button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">Không tìm thấy sản phẩm nào.</h4>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-primary mt-3">Về trang chủ</a>
+        </div>
+    }
+</div>

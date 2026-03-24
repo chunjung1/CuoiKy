@@ -1,0 +1,151 @@
+@model CuoiKy.ViewModels.Cart
+@{
+    Layout = null;
+    ViewData["Title"] = "Giỏ hàng của bạn";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TechStore</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .card {
+            border-radius: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container py-5">
+    <div class="d-flex align-items-center mb-4">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary me-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h2 class="fw-bold mb-0">Giỏ hàng của bạn</h2>
+    </div>
+
+    @if (Model != null && Model.Items.Any())
+    {
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white fw-bold py-3">
+                        Chi tiết sản phẩm
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="border-0">Sản phẩm</th>
+                                        <th scope="col" class="border-0 text-center">Giá</th>
+                                        <th scope="col" class="border-0 text-center">Số lượng</th>
+                                        <th scope="col" class="border-0 text-end">Tổng</th>
+                                        <th scope="col" class="border-0"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.Items)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <img src="@(item.ImageUrl ?? "/images/default-product.png")" alt="@item.Name" class="img-fluid rounded" style="width: 60px;">
+                                                    <div class="ms-3">
+                                                        <h6 class="mb-0">@item.Name</h6>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">@item.Price.ToString("N0")₫</td>
+                                            <td class="text-center">
+                                                <div class="d-flex justify-content-center">
+                                                    <input type="number" value="@item.Quantity" min="1" class="form-control form-control-sm text-center" style="width: 70px;" onchange="updateCartQuantity(@item.ProductId, this.value)">
+                                                </div>
+                                            </td>
+                                            <td class="text-end fw-bold">@((item.Price * item.Quantity).ToString("N0"))₫</td>
+                                            <td class="text-end">
+                                                <button onclick="removeFromCart(@item.ProductId)" class="btn btn-sm btn-outline-danger border-0">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white fw-bold py-3">
+                        Tổng kết đơn hàng
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-3">
+                            <span>Tạm tính</span>
+                            <span>@Model.GetTotalPrice().ToString("N0")₫</span>
+                        </div>
+                        <div class="d-flex justify-content-between fw-bold fs-5 border-top pt-3">
+                            <span>Tổng cộng</span>
+                            <span class="text-danger">@Model.GetTotalPrice().ToString("N0")₫</span>
+                        </div>
+                        <div class="d-grid gap-2 mt-4">
+                            <a asp-controller="Cart" asp-action="Checkout" class="btn btn-primary btn-lg py-3 fw-bold">TIẾN HÀNH THANH TOÁN</a>
+                            <a asp-controller="Home" asp-action="Index" class="btn btn-link text-secondary text-decoration-none">Tiếp tục mua sắm</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
+            <h4 class="fw-bold">Giỏ hàng của bạn đang trống</h4>
+            <p class="text-muted">Hãy khám phá và thêm sản phẩm bạn yêu thích vào giỏ hàng nhé!</p>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-primary mt-3 px-5">Bắt đầu mua sắm</a>
+        </div>
+    }
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function updateCartQuantity(productId, quantity) {
+        const formData = new FormData();
+        formData.append('productId', productId);
+        formData.append('quantity', quantity);
+
+        fetch('/Cart/UpdateCart', {
+            method: 'POST',
+            body: formData
+        }).then(() => {
+            window.location.reload();
+        });
+    }
+
+    function removeFromCart(productId) {
+        if (!confirm('Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?')) {
+            return;
+        }
+        const formData = new FormData();
+        formData.append('productId', productId);
+
+        fetch('/Cart/RemoveFromCart', {
+            method: 'POST',
+            body: formData
+        }).then(() => {
+            window.location.reload();
+        });
+    }
+</script>
+</body>
+</html>

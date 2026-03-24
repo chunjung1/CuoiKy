@@ -1,0 +1,165 @@
+@model IEnumerable<CuoiKy.Models.Product>
+@{
+    ViewData["Title"] = "Quản lý sản phẩm - TechStore";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold"><i class="fas fa-boxes me-2"></i>Quản lý sản phẩm</h2>
+        <a asp-action="Create" class="btn btn-primary shadow-sm">
+            <i class="fas fa-plus-circle me-1"></i> Thêm sản phẩm mới
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Sản phẩm</th>
+                            <th>Loại</th>
+                            <th>Giá (đ)</th>
+                            <th>Tồn kho</th>
+                            <th class="text-center pe-4">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr id="product-row-@item.Id">
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3" style="width: 50px; height: 50px; overflow: hidden; border-radius: 8px; background: #f8f9fa;">
+                                            @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                            {
+                                                <img src="@item.ImageUrl" class="w-100 h-100 object-fit-contain" alt="@item.Name">
+                                            }
+                                            else
+                                            {
+                                                <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted bg-light">
+                                                    <i class="fas fa-image"></i>
+                                                </div>
+                                            }
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">@item.Name</div>
+                                            <small class="text-muted d-block text-truncate" style="max-width: 250px;">@item.Description</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info text-white rounded-pill">@(item.Category?.Name ?? "-")</span>
+                                </td>
+                                <td class="fw-bold text-primary">
+                                    @item.Price.ToString("N0")đ
+                                </td>
+                                <td>
+                                    @if (item.StockQuantity <= 5)
+                                    {
+                                        <span class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-1"></i> @item.StockQuantity</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-success">@item.StockQuantity</span>
+                                    }
+                                </td>
+                                <td class="text-center pe-4">
+                                    <div class="btn-group shadow-sm rounded">
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-warning btn-sm" title="Sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="confirmDelete(@item.Id, '@item.Name')" title="Xóa">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-exclamation-circle fa-4x text-danger mb-3"></i>
+                <p class="fs-5 mb-0">Bạn có chắc chắn muốn xóa sản phẩm:</p>
+                <p class="fw-bold fs-4 text-primary mt-2" id="deleteProductName"></p>
+                <p class="text-muted small">Hành động này không thể hoàn tác và sẽ xóa khỏi hệ thống.</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                <form id="deleteForm" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="deleteProductId" name="id" />
+                    <button type="button" onclick="executeDelete()" class="btn btn-danger px-4 shadow-sm">Đồng ý xóa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let productToDelete = 0;
+
+        function confirmDelete(id, name) {
+            productToDelete = id;
+            document.getElementById('deleteProductName').innerText = name;
+            document.getElementById('deleteProductId').value = id;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+
+        function executeDelete() {
+            const id = document.getElementById('deleteProductId').value;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            const formData = new URLSearchParams();
+            formData.append('id', id);
+            formData.append('__RequestVerificationToken', token);
+
+            fetch(`/Product/Delete/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: formData.toString()
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                    const row = document.getElementById(`product-row-${id}`);
+                    row.style.transition = 'all 0.5s';
+                    row.style.opacity = '0';
+                    row.style.transform = 'translateX(20px)';
+                    setTimeout(() => row.remove(), 500);
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi xóa sản phẩm.');
+            });
+        }
+    </script>
+}

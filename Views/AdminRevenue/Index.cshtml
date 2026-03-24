@@ -1,0 +1,165 @@
+@model CuoiKy.ViewModels.AdminRevenueViewModel
+@{
+    ViewData["Title"] = "Thống kê doanh thu";
+    Layout = "_AdminLayout";
+    var maxRevenue = Model.RevenueByDays.Any() ? Model.RevenueByDays.Max(x => x.Revenue) : 0m;
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold"><i class="fas fa-chart-line me-2"></i>Thống kê doanh thu</h2>
+        <form method="get" class="d-flex align-items-end gap-2">
+            <div>
+                <label class="form-label small text-muted mb-1">Từ ngày</label>
+                <input type="date" class="form-control" name="startDate" value="@Model.StartDate.ToString("yyyy-MM-dd")" />
+            </div>
+            <div>
+                <label class="form-label small text-muted mb-1">Đến ngày</label>
+                <input type="date" class="form-control" name="endDate" value="@Model.EndDate.ToString("yyyy-MM-dd")" />
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter me-1"></i>Lọc</button>
+        </form>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-muted small">Tổng doanh thu</div>
+                            <div class="fs-3 fw-bold text-danger">@Model.TotalRevenue.ToString("N0")₫</div>
+                        </div>
+                        <div class="text-danger fs-2"><i class="fas fa-coins"></i></div>
+                    </div>
+                    <div class="text-muted small mt-2">
+                        @Model.StartDate.ToString("dd/MM/yyyy") - @Model.EndDate.ToString("dd/MM/yyyy")
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-muted small">Tổng đơn hàng</div>
+                            <div class="fs-3 fw-bold">@Model.TotalOrders</div>
+                        </div>
+                        <div class="text-primary fs-2"><i class="fas fa-receipt"></i></div>
+                    </div>
+                    <div class="text-muted small mt-2">Chỉ tính đơn Paid/Shipping/Completed</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="text-muted small">Đơn đã thanh toán</div>
+                            <div class="fs-3 fw-bold">@Model.PaidOrders</div>
+                        </div>
+                        <div class="text-success fs-2"><i class="fas fa-check-circle"></i></div>
+                    </div>
+                    <div class="text-muted small mt-2">Trạng thái Paid</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12 col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-bold py-3">
+                    Doanh thu theo ngày
+                </div>
+                <div class="card-body">
+                    @if (!Model.RevenueByDays.Any())
+                    {
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-chart-area fa-3x mb-3"></i>
+                            <div>Không có dữ liệu trong khoảng thời gian đã chọn.</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Ngày</th>
+                                        <th style="width: 45%;">Biểu đồ</th>
+                                        <th class="text-end">Đơn</th>
+                                        <th class="text-end">Doanh thu</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var row in Model.RevenueByDays)
+                                    {
+                                        var percent = maxRevenue <= 0 ? 0 : (int)Math.Round((double)(row.Revenue / maxRevenue * 100));
+                                        <tr>
+                                            <td class="fw-bold">@row.Date.ToString("dd/MM")</td>
+                                            <td>
+                                                <div class="progress" style="height: 10px;">
+                                                    <div class="progress-bar bg-primary" role="progressbar" style="width: @percent%"></div>
+                                                </div>
+                                            </td>
+                                            <td class="text-end">@row.Orders</td>
+                                            <td class="text-end fw-bold text-danger">@row.Revenue.ToString("N0")₫</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-5">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-bold py-3">
+                    Top sản phẩm theo doanh thu
+                </div>
+                <div class="card-body p-0">
+                    @if (!Model.TopProducts.Any())
+                    {
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-box-open fa-3x mb-3"></i>
+                            <div>Chưa có sản phẩm nào phát sinh doanh thu.</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="ps-3">Sản phẩm</th>
+                                        <th class="text-end">SL</th>
+                                        <th class="text-end pe-3">Doanh thu</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var p in Model.TopProducts)
+                                    {
+                                        <tr>
+                                            <td class="ps-3">
+                                                <div class="fw-bold text-truncate" style="max-width: 260px;" title="@p.Name">@p.Name</div>
+                                                <div class="small text-muted">#@p.ProductId</div>
+                                            </td>
+                                            <td class="text-end">@p.Quantity</td>
+                                            <td class="text-end fw-bold text-danger pe-3">@p.Revenue.ToString("N0")₫</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

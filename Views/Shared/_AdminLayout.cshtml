@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Admin Dashboard</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        body {
+            background-color: #f4f7f6;
+        }
+        .admin-sidebar {
+            min-height: 100vh;
+            background: #2c3e50;
+            color: #fff;
+            transition: all 0.3s;
+        }
+        .admin-sidebar .nav-link {
+            color: #bdc3c7;
+            padding: 15px 20px;
+            border-bottom: 1px solid #34495e;
+        }
+        .admin-sidebar .nav-link:hover, .admin-sidebar .nav-link.active {
+            background: #1a252f;
+            color: #fff;
+        }
+        .admin-sidebar .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        .admin-header {
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 15px 30px;
+        }
+        .content-wrapper {
+            padding: 30px;
+        }
+        .card {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .sidebar-heading {
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: #1a252f;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-0 d-flex">
+        <!-- Sidebar -->
+        <div class="admin-sidebar shadow-sm" style="width: 260px; flex-shrink: 0;">
+            <div class="sidebar-heading border-bottom border-secondary">
+                <i class="fas fa-user-shield me-2 text-warning"></i>TechStore Admin
+            </div>
+            <ul class="nav flex-column mt-2">
+                <li class="nav-item">
+                    <a class="nav-link active" asp-area="" asp-controller="Product" asp-action="Index">
+                        <i class="fas fa-boxes"></i>Quản lý sản phẩm
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="AdminCategory" asp-action="Index">
+                        <i class="fas fa-tags"></i>Quản lý loại sản phẩm
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="AdminOrder" asp-action="Index">
+                        <i class="fas fa-shopping-bag"></i>Quản lý đơn hàng
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="AdminUser" asp-action="Index">
+                        <i class="fas fa-users"></i>Quản lý người dùng
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="AdminRevenue" asp-action="Index">
+                        <i class="fas fa-chart-line"></i>Thống kê doanh thu
+                    </a>
+                    </a>
+                <li class="nav-item mt-4">
+                    <a class="nav-link text-info border-top border-secondary" asp-area="" asp-controller="Home" asp-action="Index">
+                        <i class="fas fa-external-link-alt"></i>Về trang chủ
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-danger" asp-area="" asp-controller="Account" asp-action="Logout">
+                        <i class="fas fa-sign-out-alt"></i>Đăng xuất
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-grow-1 d-flex flex-column" style="min-width: 0;">
+            <header class="admin-header d-flex justify-content-between align-items-center">
+                <button class="btn btn-light d-md-none"><i class="fas fa-bars"></i></button>
+                <div class="breadcrumb mb-0 bg-transparent p-0">
+                    <span class="text-muted">Admin</span> 
+                    <span class="mx-2 text-muted">/</span>
+                    <span class="fw-bold">@ViewData["Title"]</span>
+                </div>
+                <div class="user-profile d-flex align-items-center">
+                    <span class="me-3 fw-bold">Xin chào, @User.Identity?.Name</span>
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm" style="width: 40px; height: 40px;">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>
+            </header>
+
+            <main class="content-wrapper">
+                @RenderBody()
+            </main>
+
+            <footer class="mt-auto py-3 px-4 bg-white border-top text-center text-muted small">
+                &copy; 2026 - TechStore Management System - All Rights Reserved
+            </footer>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

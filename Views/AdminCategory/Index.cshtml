@@ -1,0 +1,137 @@
+@model IEnumerable<CuoiKy.Models.Category>
+@{
+    ViewData["Title"] = "Quản lý loại sản phẩm";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold"><i class="fas fa-tags me-2"></i>Quản lý loại sản phẩm</h2>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white fw-bold py-3">Tạo loại sản phẩm mới</div>
+        <div class="card-body">
+            <form asp-action="Create" method="post" class="row g-2">
+                @Html.AntiForgeryToken()
+                <div class="col-12 col-md-6">
+                    <input class="form-control" name="name" placeholder="Nhập tên loại sản phẩm..." />
+                </div>
+                <div class="col-12 col-md-auto">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Tạo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">ID</th>
+                            <th>Tên loại</th>
+                            <th class="text-center pe-4">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model)
+                        {
+                            <tr id="cat-row-@c.Id">
+                                <td class="ps-4 fw-bold text-primary">#@c.Id</td>
+                                <td class="fw-bold">@c.Name</td>
+                                <td class="text-center pe-4">
+                                    <div class="btn-group shadow-sm rounded">
+                                        <a asp-action="Edit" asp-route-id="@c.Id" class="btn btn-outline-warning btn-sm" title="Sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="confirmDelete(@c.Id, '@c.Name')" title="Xóa">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-exclamation-triangle fa-4x text-warning mb-3"></i>
+                <p class="fs-5 mb-0">Bạn có chắc chắn muốn xóa loại:</p>
+                <p class="fw-bold fs-4 text-primary mt-2" id="deleteCategoryName"></p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" onclick="executeDelete()" class="btn btn-danger px-4 shadow-sm">Đồng ý xóa</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        let categoryToDelete = 0;
+
+        function confirmDelete(id, name) {
+            categoryToDelete = id;
+            document.getElementById('deleteCategoryName').innerText = name;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+
+        function executeDelete() {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const formData = new FormData();
+            formData.append('id', categoryToDelete);
+            formData.append('__RequestVerificationToken', token);
+
+            fetch('/AdminCategory/Delete', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                    const row = document.getElementById(`cat-row-${categoryToDelete}`);
+                    row.style.transition = 'all 0.5s';
+                    row.style.opacity = '0';
+                    row.style.transform = 'translateX(20px)';
+                    setTimeout(() => row.remove(), 500);
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(() => alert('Có lỗi xảy ra khi xóa loại sản phẩm.'));
+        }
+    </script>
+}
+

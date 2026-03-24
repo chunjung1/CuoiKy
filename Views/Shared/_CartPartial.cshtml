@@ -1,0 +1,62 @@
+@model CuoiKy.ViewModels.Cart
+
+@{
+    var stockMap = ViewBag.StockMap as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var errorMessage = ViewBag.ErrorMessage as string;
+}
+
+<div class="modal-header border-0">
+    <h4 class="modal-title fw-bold"><i class="fas fa-shopping-cart me-2"></i>Giỏ hàng của bạn</h4>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <div>@errorMessage</div>
+        </div>
+    }
+    @if (Model.Items.Any())
+    {
+        <div class="list-group list-group-flush">
+            @foreach (var item in Model.Items)
+            {
+                var stock = stockMap.TryGetValue(item.ProductId, out var s) ? s : 0;
+                var outOfStock = stock <= 0;
+                <div class="list-group-item d-flex align-items-center">
+                    <input class="form-check-input me-3" type="checkbox" value="@item.ProductId" onchange="toggleItemSelection(this)" @(item.IsSelected ? "checked" : "") @(outOfStock ? "disabled" : "")>
+                    <img src="@(!string.IsNullOrEmpty(item.ImageUrl) ? item.ImageUrl : "/lib/img/no-image.png")" class="rounded me-3" style="width: 60px; height: 60px; object-fit: contain;" alt="@item.Name">
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">@item.Name</div>
+                        <div class="text-primary">@item.Price.ToString("N0")₫</div>
+                        @if (outOfStock)
+                        {
+                            <div class="small text-danger fw-bold">Hết hàng</div>
+                        }
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <input type="number" value="@item.Quantity" min="1" max="@(stock > 0 ? stock : 1)" class="form-control form-control-sm text-center" style="width: 60px;" onchange="updateCartQuantity(@item.ProductId, this.value)" @(outOfStock ? "disabled" : "")>
+                        <button class="btn btn-sm btn-outline-danger ms-2" onclick="removeFromCart(@item.ProductId)"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
+            <p>Giỏ hàng của bạn đang trống.</p>
+        </div>
+    }
+</div>
+<div class="modal-footer border-0 justify-content-between">
+    <div>
+        <span class="fw-bold fs-5">Tổng cộng:</span>
+        <span class="fw-bold fs-4 text-danger" id="cart-total-price">@Model.GetTotalPrice().ToString("N0")₫</span>
+    </div>
+    <button type="button" class="btn btn-primary btn-lg shadow-sm" data-bs-dismiss="modal">
+        <i class="fas fa-check me-2"></i>Thêm vào giỏ hàng
+    </button>
+</div>

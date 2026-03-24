@@ -1,0 +1,39 @@
+@model CuoiKy.ViewModels.Cart
+@{
+    ViewData["Title"] = "Giỏ hàng";
+}
+<h2>Giỏ hàng</h2>
+<table class="table">
+    <thead>
+        <tr><th>Sản phẩm</th><th>Số lượng</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.Items)
+        {
+            <tr>
+                <td>@item.ProductId</td>
+                <td>@item.Quantity</td>
+            </tr>
+        }
+    </tbody>
+</table>
+<p><strong>Tổng:</strong> @Model.GetTotalPrice().ToString("C")</p>
+<form asp-action="Checkout" method="post">
+    <div class="mb-3">
+        <label class="form-label">Tên khách hàng</label>
+        <input class="form-control" name="customerName" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Địa chỉ</label>
+        <input class="form-control" name="shippingAddress" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Phương thức thanh toán</label>
+        <select class="form-control" name="paymentMethod">
+            <option value="Cash">Tiền mặt</option>
+            <option value="BankTransfer">Chuyển khoản</option>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-success">Thanh toán</button>
+</form>
+<a asp-action="Index" class="btn btn-secondary">Về sản phẩm</a>
