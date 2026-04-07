@@ -22,6 +22,17 @@
         transform: translateY(-5px);
         box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
+    .quick-categories-row > .col {
+        flex: 0 0 20%;
+        max-width: 20%;
+        min-width: 180px;
+    }
+    @@media (max-width: 992px) {
+        .quick-categories-row > .col {
+            flex: 0 0 40%;
+            max-width: 40%;
+        }
+    }
     .section-title {
         border-left: 5px solid #008BFF;
         padding-left: 15px;
@@ -109,7 +120,7 @@
 
 <div class="container">
     <!-- Quick Categories -->
-    <div class="row mb-5 g-3 flex-nowrap overflow-auto pb-2">
+    <div class="row mb-5 g-3 flex-nowrap overflow-auto pb-2 quick-categories-row">
         <div class="col">
             <a asp-controller="Product" asp-action="List" asp-route-category="Laptop" class="text-decoration-none">
                 <div class="card category-card text-center p-3 h-100">
@@ -148,6 +159,14 @@
                 <div class="card category-card text-center p-3 h-100">
                     <i class="fas fa-headphones fa-2x text-primary mb-2"></i>
                     <span class="small fw-bold text-dark">headphones</span>
+                </div>
+            </a>
+        </div>
+        <div class="col">
+            <a asp-controller="Product" asp-action="List" asp-route-category="Accessory" class="text-decoration-none">
+                <div class="card category-card text-center p-3 h-100">
+                    <i class="fas fa-plug fa-2x text-primary mb-2"></i>
+                    <span class="small fw-bold text-dark">Phụ kiện</span>
                 </div>
             </a>
         </div>

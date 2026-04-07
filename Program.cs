@@ -64,17 +64,15 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     // db.Database.EnsureCreated();
 
-    if (!db.Categories.Any())
+    var defaultCategoryNames = new[] { "Phone", "Laptop", "Keyboard", "Mouse", "Headphone", "Accessory" };
+    foreach (var name in defaultCategoryNames)
     {
-        db.Categories.AddRange(
-            new Category { Name = "Phone" },
-            new Category { Name = "Laptop" },
-            new Category { Name = "Keyboard" },
-            new Category { Name = "Mouse" },
-            new Category { Name = "Headphone" }
-        );
-        db.SaveChanges();
+        if (!db.Categories.Any(c => c.Name == name))
+        {
+            db.Categories.Add(new Category { Name = name });
+        }
     }
+    db.SaveChanges();
 
     if (!db.Products.Any())
     {
