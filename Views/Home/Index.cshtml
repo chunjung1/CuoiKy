@@ -1,4 +1,4 @@
-@model IEnumerable<CuoiKy.Models.Product>
+@model CuoiKy.ViewModels.HomeIndexViewModel
 @{
     ViewData["Title"] = "TechStore - Trang chủ";
 }
@@ -121,55 +121,35 @@
 <div class="container">
     <!-- Quick Categories -->
     <div class="row mb-5 g-3 flex-nowrap overflow-auto pb-2 quick-categories-row">
-        <div class="col">
-            <a asp-controller="Product" asp-action="List" asp-route-category="Laptop" class="text-decoration-none">
-                <div class="card category-card text-center p-3 h-100">
-                    <i class="fas fa-laptop fa-2x text-primary mb-2"></i>
-                    <span class="small fw-bold text-dark">Laptop</span>
-                </div>
-            </a>
-        </div>
-        <div class="col">
-            <a asp-controller="Product" asp-action="List" asp-route-category="Phone" class="text-decoration-none">
-                <div class="card category-card text-center p-3 h-100">
-                    <i class="fas fa-mobile-alt fa-2x text-primary mb-2">
-                    </i>
-                    <span class="small fw-bold text-dark">Phone</span>
-                </div>
-            </a>
-        </div>
-        <div class="col">
-            <a asp-controller="Product" asp-action="List" asp-route-category="Keyboard" class="text-decoration-none">
-                <div class="card category-card text-center p-3 h-100">
-                    <i class="fas fa-keyboard fa-2x text-primary mb-2"></i>
-                    <span class="small fw-bold text-dark">Keyboard</span>
-                </div>
-            </a>
-        </div>
-        <div class="col">
-            <a asp-controller="Product" asp-action="List" asp-route-category="Mouse" class="text-decoration-none">
-                <div class="card category-card text-center p-3 h-100">
-                    <i class="fas fa-mouse fa-2x text-primary mb-2"></i>
-                    <span class="small fw-bold text-dark">Mouse</span>
-                </div>
-            </a>
-        </div>
-        <div class="col">
-            <a asp-controller="Product" asp-action="List" asp-route-category="Headphone" class="text-decoration-none">
-                <div class="card category-card text-center p-3 h-100">
-                    <i class="fas fa-headphones fa-2x text-primary mb-2"></i>
-                    <span class="small fw-bold text-dark">headphones</span>
-                </div>
-            </a>
-        </div>
-        <div class="col">
-            <a asp-controller="Product" asp-action="List" asp-route-category="Accessory" class="text-decoration-none">
-                <div class="card category-card text-center p-3 h-100">
-                    <i class="fas fa-plug fa-2x text-primary mb-2"></i>
-                    <span class="small fw-bold text-dark">Phụ kiện</span>
-                </div>
-            </a>
-        </div>
+        @foreach (var c in Model.Categories)
+        {
+            var name = c.Name;
+            var displayName = name switch
+            {
+                "Accessory" => "Phụ kiện",
+                "Headphone" => "Headphones",
+                _ => name
+            };
+            var icon = name switch
+            {
+                "Laptop" => "fa-laptop",
+                "Phone" => "fa-mobile-alt",
+                "Keyboard" => "fa-keyboard",
+                "Mouse" => "fa-mouse",
+                "Headphone" => "fa-headphones",
+                "Accessory" => "fa-plug",
+                _ => "fa-tags"
+            };
+
+            <div class="col">
+                <a asp-controller="Product" asp-action="List" asp-route-category="@name" class="text-decoration-none">
+                    <div class="card category-card text-center p-3 h-100">
+                        <i class="fas @icon fa-2x text-primary mb-2"></i>
+                        <span class="small fw-bold text-dark">@displayName</span>
+                    </div>
+                </a>
+            </div>
+        }
     </div>
 
     <!-- Promo Section -->
@@ -193,9 +173,9 @@
     </div>
 
     <div class="latest-products-scroll mb-5">
-        @if (Model != null && Model.Any())
+        @if (Model.Products != null && Model.Products.Any())
         {
-            @foreach (var item in Model.OrderByDescending(p => p.Id).Take(6))
+            @foreach (var item in Model.Products.OrderByDescending(p => p.Id).Take(6))
             {
                 <div class="product-item">
                     <div class="card h-100 border-0 shadow-sm product-card">

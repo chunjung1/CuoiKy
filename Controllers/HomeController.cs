@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using CuoiKy.Models;
 using CuoiKy.Data;
 using Microsoft.EntityFrameworkCore;
+using CuoiKy.ViewModels;
 
 namespace CuoiKy.Controllers;
 
@@ -19,8 +20,21 @@ public class HomeController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var products = await _dbContext.Products.ToListAsync();
-        return View(products);
+        var categories = await _dbContext.Categories
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+
+        var products = await _dbContext.Products
+            .OrderByDescending(p => p.Id)
+            .ToListAsync();
+
+        var vm = new HomeIndexViewModel
+        {
+            Categories = categories,
+            Products = products
+        };
+
+        return View(vm);
     }
 
     public IActionResult Privacy()
