@@ -7,7 +7,7 @@
 <div class="container-fluid py-4">
     <div class="mb-4">
         <a asp-action="Index" class="text-decoration-none text-muted"><i class="fas fa-arrow-left me-1"></i>Quay lại</a>
-        <h2 class="fw-bold mt-2"><i class="fas fa-edit me-2"></i>Sửa loại sản phẩm</h2>
+        <h2 class="fw-bold mt-2"><i class="fas fa-edit me-2"></i>Sửa danh mục sản phẩm</h2>
     </div>
 
     <div class="card border-0 shadow-sm" style="max-width: 700px;">
@@ -16,7 +16,7 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Id" />
                 <div class="col-12">
-                    <label class="form-label fw-bold">Tên loại sản phẩm</label>
+                    <label class="form-label fw-bold">Tên danh mục sản phẩm</label>
                     <input class="form-control" name="name" value="@Model.Name" />
                     <span class="text-danger small">@Html.ValidationMessage("Name")</span>
                 </div>

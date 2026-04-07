@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -24,6 +24,47 @@
             border: none;
             padding: 5px 15px;
         }
+        .search-suggest {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid rgba(0,0,0,0.12);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            z-index: 2000;
+            overflow: hidden;
+            display: none;
+        }
+        .search-suggest a {
+            text-decoration: none;
+            color: inherit;
+        }
+        .search-suggest-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+        }
+        .search-suggest-item:hover {
+            background: #f6f9ff;
+        }
+        .search-suggest-thumb {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: #f1f3f5;
+            object-fit: contain;
+        }
+        .search-suggest-name {
+            font-weight: 600;
+            line-height: 1.2;
+        }
+        .search-suggest-sub {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
     </style>
 </head>
 <body>
@@ -46,12 +87,15 @@
                         </li>
                     </ul>
                     
-                    <form class="d-flex flex-grow-1 mx-lg-4 my-2 my-lg-0">
-                        <div class="input-group w-100">
-                        <input class="form-control search-box" type="search" placeholder="Bạn cần tìm gì?" aria-label="Search" style="border-radius: 20px; padding-right: 45px;">
+                    <form class="d-flex flex-grow-1 mx-lg-4 my-2 my-lg-0" asp-controller="Product" asp-action="List" method="get" autocomplete="off">
+                        <div class="position-relative w-100">
+                            <div class="input-group w-100">
+                                <input id="headerSearchInput" name="q" value="@Context.Request.Query["q"]" class="form-control search-box" type="search" placeholder="Bạn cần tìm gì?" aria-label="Search" style="border-radius: 20px; padding-right: 45px;">
                             <button class="btn btn-light ms-n5" type="submit" style="border-radius: 0 20px 20px 0; margin-left: -40px; z-index: 5;">
                                 <i class="fas fa-search"></i>
                             </button>
+                            </div>
+                            <div id="headerSearchSuggest" class="search-suggest"></div>
                         </div>
                     </form>
 
@@ -225,6 +269,111 @@
                 document.getElementById('cartModalContent').innerHTML = html;
             });
         }
+
+        (function () {
+            const input = document.getElementById('headerSearchInput');
+            const suggest = document.getElementById('headerSearchSuggest');
+            if (!input || !suggest) return;
+
+            let timer = null;
+            let lastQ = '';
+
+            function hideSuggest() {
+                suggest.style.display = 'none';
+                suggest.innerHTML = '';
+            }
+
+            function showSuggest(html) {
+                suggest.innerHTML = html;
+                suggest.style.display = html ? 'block' : 'none';
+            }
+
+            function formatPrice(v) {
+                try {
+                    return Number(v).toLocaleString('vi-VN') + '₫';
+                } catch {
+                    return v + '₫';
+                }
+            }
+
+            async function fetchSuggest(q) {
+                const resp = await fetch('/Product/Suggest?q=' + encodeURIComponent(q), { method: 'GET' });
+                if (!resp.ok) return [];
+                return await resp.json();
+            }
+
+            function render(items, q) {
+                if (!items || items.length === 0) {
+                    return `
+                        <div class="search-suggest-item">
+                            <div class="search-suggest-sub">Không tìm thấy gợi ý cho "${q}"</div>
+                        </div>
+                    `;
+                }
+
+                const rows = items.map(p => {
+                    const img = p.imageUrl && p.imageUrl.length ? p.imageUrl : '/lib/img/no-image.png';
+                    const stockLabel = p.stockQuantity <= 0 ? '<div class="search-suggest-sub text-danger">Hết hàng</div>' : '';
+                    return `
+                        <a class="search-suggest-item" href="/Product/Details/${p.id}">
+                            <img class="search-suggest-thumb" src="${img}" alt="">
+                            <div class="flex-grow-1">
+                                <div class="search-suggest-name">${p.name}</div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="search-suggest-sub text-danger fw-bold">${formatPrice(p.price)}</div>
+                                    ${stockLabel}
+                                </div>
+                            </div>
+                        </a>
+                    `;
+                }).join('');
+
+                const more = `
+                    <a class="search-suggest-item" href="/Product/List?q=${encodeURIComponent(q)}">
+                        <div class="search-suggest-sub">Xem tất cả kết quả</div>
+                    </a>
+                `;
+
+                return rows + more;
+            }
+
+            input.addEventListener('input', () => {
+                const q = (input.value || '').trim();
+                if (q.length < 2) {
+                    lastQ = q;
+                    hideSuggest();
+                    return;
+                }
+
+                if (timer) clearTimeout(timer);
+                timer = setTimeout(async () => {
+                    lastQ = q;
+                    const items = await fetchSuggest(q);
+                    if (lastQ !== q) return;
+                    showSuggest(render(items, q));
+                }, 250);
+            });
+
+            input.addEventListener('focus', () => {
+                const q = (input.value || '').trim();
+                if (q.length >= 2 && suggest.innerHTML) {
+                    suggest.style.display = 'block';
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!suggest.contains(e.target) && e.target !== input) {
+                    hideSuggest();
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    hideSuggest();
+                    input.blur();
+                }
+            });
+        })();
     </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

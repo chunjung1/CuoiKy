@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using CuoiKy.Data;
 using CuoiKy.Models;
 using System.Security.Claims;
+using CuoiKy.ViewModels;
 
 namespace CuoiKy.Controllers;
 
@@ -64,23 +65,35 @@ public class AccountController : Controller
     [HttpGet]
     public IActionResult Register()
     {
-        return View();
+        return View(new RegisterViewModel());
     }
 
     [HttpPost]
-    public IActionResult Register(string username, string email, string password)
+    [ValidateAntiForgeryToken]
+    public IActionResult Register(RegisterViewModel model)
     {
-        if (_dbContext.Users.Any(u => u.Email == email))
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        if (_dbContext.Users.Any(u => u.Email == model.Email))
         {
             ModelState.AddModelError(string.Empty, "Email này đã được sử dụng.");
-            return View();
+            return View(model);
+        }
+
+        if (_dbContext.Users.Any(u => u.Username == model.Username))
+        {
+            ModelState.AddModelError(string.Empty, "Tên đăng nhập này đã được sử dụng.");
+            return View(model);
         }
 
         var newUser = new User
         {
-            Username = username,
-            Email = email,
-            Password = password,
+            Username = model.Username,
+            Email = model.Email,
+            Password = model.Password,
             Role = UserRole.Customer
         };
 

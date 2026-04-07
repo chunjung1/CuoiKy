@@ -61,7 +61,8 @@ public class AdminRevenueController : Controller
                     Revenue = g.Sum(x => x.UnitPrice * x.Quantity)
                 }
             )
-            .OrderByDescending(x => x.Revenue)
+            .OrderByDescending(x => x.Quantity)
+            .ThenByDescending(x => x.Revenue)
             .Take(6)
             .ToListAsync();
 
@@ -94,4 +95,3 @@ public class AdminRevenueController : Controller
         return View(vm);
     }
 }
-

@@ -14,6 +14,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Đăng ký Design Patterns
 builder.Services.AddScoped<IOrderObserver, InventoryObserver>();
 builder.Services.AddScoped<CheckoutFacade>();
+builder.Services.AddSingleton<QrServerClient>();
+builder.Services.AddSingleton<IQrCodeGenerator, QrServerQrCodeGenerator>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

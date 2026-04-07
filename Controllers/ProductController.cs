@@ -97,16 +97,49 @@ public class ProductController : Controller
     }
 
     [AllowAnonymous]
-    public async Task<IActionResult> List(string? category)
+    public async Task<IActionResult> List(string? category, string? q)
     {
         var query = _dbContext.Products.Include(p => p.Category).AsQueryable();
         if (!string.IsNullOrWhiteSpace(category))
         {
             query = query.Where(p => p.Category != null && p.Category.Name == category);
         }
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            q = q.Trim();
+            query = query.Where(p => EF.Functions.Like(p.Name, $"%{q}%"));
+        }
         var products = await query.ToListAsync();
         ViewBag.CurrentCategory = category;
+        ViewBag.Query = q;
         return View(products);
+    }
+
+    [AllowAnonymous]
+    [HttpGet]
+    public async Task<IActionResult> Suggest(string q)
+    {
+        q = (q ?? string.Empty).Trim();
+        if (q.Length < 2)
+        {
+            return Json(Array.Empty<object>());
+        }
+
+        var items = await _dbContext.Products
+            .Where(p => EF.Functions.Like(p.Name, $"%{q}%"))
+            .OrderByDescending(p => p.Id)
+            .Select(p => new
+            {
+                id = p.Id,
+                name = p.Name,
+                imageUrl = p.ImageUrl,
+                price = p.Price,
+                stockQuantity = p.StockQuantity
+            })
+            .Take(6)
+            .ToListAsync();
+
+        return Json(items);
     }
 
     [AllowAnonymous] // Allow anyone to view product details

@@ -1,6 +1,7 @@
 using System.Text.Json;
-using CuoiKy.Patterns;
 using CuoiKy.ViewModels;
+
+namespace CuoiKy.Patterns;
 
 public static class CartSessionHelper
 {

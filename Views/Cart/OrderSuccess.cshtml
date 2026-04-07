@@ -22,7 +22,7 @@
                 
                 <!-- QR Code Placeholder -->
                 <div class="bg-light p-3 rounded mb-4 d-inline-block">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=TechStoreOrder_@Model.Id" 
+                    <img src="@ViewBag.QrUrl" 
                          alt="QR Code Thanh Toán" class="img-fluid" style="max-width: 250px;" />
                 </div>
 
@@ -30,7 +30,6 @@
                     <p class="mb-1"><strong>Ngân hàng:</strong> MB Bank</p>
                     <p class="mb-1"><strong>Số tài khoản:</strong> 0911551669</p>
                     <p class="mb-1"><strong>Chủ tài khoản:</strong> CTY TECHSTORE</p>
-                    <p class="mb-0"><strong>Nội dung:</strong> TS @Model.Id</p>
                 </div>
             </div>
         </div>

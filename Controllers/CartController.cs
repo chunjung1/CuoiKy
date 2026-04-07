@@ -12,11 +12,13 @@ namespace CuoiKy.Controllers
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly CheckoutFacade _checkoutFacade;
+        private readonly IQrCodeGenerator _qrCodeGenerator;
 
-        public CartController(ApplicationDbContext dbContext, CheckoutFacade checkoutFacade)
+        public CartController(ApplicationDbContext dbContext, CheckoutFacade checkoutFacade, IQrCodeGenerator qrCodeGenerator)
         {
             _dbContext = dbContext;
             _checkoutFacade = checkoutFacade;
+            _qrCodeGenerator = qrCodeGenerator;
         }
 
         private Cart GetCart()
@@ -218,6 +220,11 @@ namespace CuoiKy.Controllers
             if (order == null)
             {
                 return NotFound();
+            }
+
+            if (order.PaymentMethod == PaymentMethod.BankTransfer)
+            {
+                ViewBag.QrUrl = _qrCodeGenerator.BuildImageUrl($"TechStoreOrder_{order.Id}", 250);
             }
 
             return View(order);

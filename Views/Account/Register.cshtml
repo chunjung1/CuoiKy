@@ -1,3 +1,4 @@
+@model CuoiKy.ViewModels.RegisterViewModel
 @{
     ViewData["Title"] = "Đăng ký";
 }
@@ -9,21 +10,32 @@
                 <div class="card-body p-5">
                     <h2 class="text-center fw-bold mb-4">Đăng ký tài khoản</h2>
                     <form asp-action="Register" method="post">
+                        @Html.AntiForgeryToken()
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Tên đăng nhập</label>
-                            <input type="text" name="username" class="form-control" required />
+                            <label asp-for="Username" class="form-label"></label>
+                            <input asp-for="Username" class="form-control" />
+                            <span asp-validation-for="Username" class="text-danger small"></span>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" name="email" class="form-control" required />
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
                         </div>
                         
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label"></label>
+                            <input asp-for="Password" class="form-control" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                            <div class="form-text">Mật khẩu phải có ít nhất 8 ký tự.</div>
+                        </div>
+
                         <div class="mb-4">
-                            <label class="form-label">Mật khẩu</label>
-                            <input type="password" name="password" class="form-control" required />
+                            <label asp-for="ConfirmPassword" class="form-label"></label>
+                            <input asp-for="ConfirmPassword" class="form-control" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
                         </div>
                         
                         <div class="d-grid gap-2">
@@ -39,3 +51,7 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

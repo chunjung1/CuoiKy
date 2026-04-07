@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "TechStore - Danh sách sản phẩm";
     var currentCategory = ViewBag.CurrentCategory as string;
+    var query = ViewBag.Query as string;
 }
 
 <style>
@@ -63,18 +64,18 @@
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
                 <li class="breadcrumb-item active" aria-current="page">
-                    @(!string.IsNullOrEmpty(currentCategory) ? currentCategory : "Tất cả sản phẩm")
+                    @(!string.IsNullOrEmpty(query) ? $"Tìm kiếm: {query}" : (!string.IsNullOrEmpty(currentCategory) ? currentCategory : "Tất cả sản phẩm"))
                 </li>
             </ol>
         </nav>
         <h3 class="section-title">
-            @(!string.IsNullOrEmpty(currentCategory) ? $"Danh mục: {currentCategory}" : "Tất cả sản phẩm")
+            @(!string.IsNullOrEmpty(query) ? $"Kết quả tìm kiếm: {query}" : (!string.IsNullOrEmpty(currentCategory) ? $"Danh mục: {currentCategory}" : "Tất cả sản phẩm"))
         </h3>
     </div>
 
     @if (Model != null && Model.Any())
     {
-        if (string.IsNullOrEmpty(currentCategory))
+        if (string.IsNullOrEmpty(currentCategory) && string.IsNullOrEmpty(query))
         {
             var groups = Model
                 .Where(p => p.Category != null)
