@@ -25,6 +25,10 @@ public class Order
 
     public User? User { get; set; }
 
+    public bool GiftWrap { get; set; }
+
+    public bool ExpressShipping { get; set; }
+
     [Required]
     public string CustomerName { get; set; } = string.Empty;
 

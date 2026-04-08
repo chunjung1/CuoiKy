@@ -63,6 +63,12 @@ public class AdminOrderController : Controller
         var order = await _dbContext.Orders.FindAsync(id);
         if (order == null) return NotFound();
 
+        if (status == OrderStatus.Pending && order.Status != OrderStatus.Pending)
+        {
+            TempData["ErrorMessage"] = "Không thể chuyển trạng thái từ trạng thái hiện tại về Chờ thanh toán.";
+            return RedirectToAction(nameof(Details), new { id = order.Id });
+        }
+
         order.Status = status;
         await _dbContext.SaveChangesAsync();
 

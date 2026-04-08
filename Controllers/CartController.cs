@@ -21,9 +21,28 @@ namespace CuoiKy.Controllers
             _qrCodeGenerator = qrCodeGenerator;
         }
 
+        private bool IsAdminUser()
+        {
+            return User.Identity?.IsAuthenticated == true && User.IsInRole("Admin");
+        }
+
+        private string GetCartSessionKey()
+        {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var name = User.Identity?.Name;
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    return $"Cart_User_{name}";
+                }
+            }
+            return "Cart_Guest";
+        }
+
         private Cart GetCart()
         {
-            Cart? cart = HttpContext.Session.Get<Cart>("Cart");
+            var key = GetCartSessionKey();
+            Cart? cart = HttpContext.Session.Get<Cart>(key);
             if (cart == null)
             {
                 cart = new Cart();
@@ -34,7 +53,8 @@ namespace CuoiKy.Controllers
 
         private void SaveCart(Cart cart)
         {
-            HttpContext.Session.Set("Cart", cart);
+            var key = GetCartSessionKey();
+            HttpContext.Session.Set(key, cart);
         }
 
         private PartialViewResult CartPartial(Cart cart, string? errorMessage = null)
@@ -50,12 +70,20 @@ namespace CuoiKy.Controllers
 
         public IActionResult Index()
         {
+            if (IsAdminUser())
+            {
+                return RedirectToAction("Index", "Home");
+            }
             return View(GetCart());
         }
 
         [HttpPost]
         public IActionResult AddToCart(int productId)
         {
+            if (IsAdminUser())
+            {
+                return CartPartial(new Cart(), "Admin không thể sử dụng giỏ hàng.");
+            }
             var product = _dbContext.Products.Find(productId);
             if (product == null) return NotFound();
 
@@ -75,6 +103,10 @@ namespace CuoiKy.Controllers
         [HttpPost]
         public IActionResult UpdateCart(int productId, int quantity)
         {
+            if (IsAdminUser())
+            {
+                return CartPartial(new Cart(), "Admin không thể sử dụng giỏ hàng.");
+            }
             var cart = GetCart();
             var item = cart.Items.FirstOrDefault(i => i.ProductId == productId);
             var product = _dbContext.Products.Find(productId);
@@ -106,6 +138,10 @@ namespace CuoiKy.Controllers
         [HttpPost]
         public IActionResult RemoveFromCart(int productId)
         {
+            if (IsAdminUser())
+            {
+                return CartPartial(new Cart(), "Admin không thể sử dụng giỏ hàng.");
+            }
             var cart = GetCart();
             cart.RemoveItem(productId);
             SaveCart(cart);
@@ -115,6 +151,10 @@ namespace CuoiKy.Controllers
         [HttpPost]
         public IActionResult ToggleItemSelection(int productId, bool isSelected)
         {
+            if (IsAdminUser())
+            {
+                return CartPartial(new Cart(), "Admin không thể sử dụng giỏ hàng.");
+            }
             var cart = GetCart();
             var item = cart.Items.FirstOrDefault(i => i.ProductId == productId);
             if (item != null)
@@ -145,6 +185,11 @@ namespace CuoiKy.Controllers
 
         public IActionResult Checkout()
         {
+            if (IsAdminUser())
+            {
+                TempData["ErrorMessage"] = "Admin không thể thanh toán.";
+                return RedirectToAction("Index", "Home");
+            }
             var cart = GetCart();
             if (!cart.Items.Any(i => i.IsSelected))
             {
@@ -155,8 +200,13 @@ namespace CuoiKy.Controllers
         }
 
         [HttpPost]
-        public IActionResult ProcessCheckout(string customerName, string phoneNumber, string shippingAddress, PaymentMethod paymentMethod)
+        public IActionResult ProcessCheckout(string customerName, string phoneNumber, string shippingAddress, PaymentMethod paymentMethod, bool giftWrap = false, bool expressShipping = false)
         {
+            if (IsAdminUser())
+            {
+                TempData["ErrorMessage"] = "Admin không thể thanh toán.";
+                return RedirectToAction("Index", "Home");
+            }
             var cart = GetCart();
             var selectedItems = cart.Items.Where(i => i.IsSelected).ToList();
 
@@ -181,11 +231,13 @@ namespace CuoiKy.Controllers
             var order = new Order
             {
                 UserId = userId,
+                GiftWrap = giftWrap,
+                ExpressShipping = expressShipping,
                 CustomerName = customerName,
                 PhoneNumber = phoneNumber,
                 ShippingAddress = shippingAddress,
                 PaymentMethod = paymentMethod,
-                TotalAmount = cart.GetTotalPrice(),
+                TotalAmount = selectedItems.Sum(i => i.Price * i.Quantity),
                 Status = OrderStatus.Pending,
                 Items = selectedItems.Select(i => new OrderItem
                 {
@@ -194,6 +246,17 @@ namespace CuoiKy.Controllers
                     UnitPrice = i.Price
                 }).ToList()
             };
+
+            OrderComponent totalComponent = new BasicOrderComponent(order);
+            if (giftWrap)
+            {
+                totalComponent = new GiftWrapDecorator(totalComponent);
+            }
+            if (expressShipping)
+            {
+                totalComponent = new ExpressShippingDecorator(totalComponent);
+            }
+            order.TotalAmount = totalComponent.GetTotal();
 
             try
             {

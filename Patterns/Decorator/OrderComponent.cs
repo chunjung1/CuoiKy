@@ -32,11 +32,11 @@ public abstract class OrderDecorator : OrderComponent
 public class GiftWrapDecorator : OrderDecorator
 {
     public GiftWrapDecorator(OrderComponent component) : base(component) { }
-    public override decimal GetTotal() => _component.GetTotal() + 15m;
+    public override decimal GetTotal() => _component.GetTotal() + 15000m;
 }
 
 public class ExpressShippingDecorator : OrderDecorator
 {
     public ExpressShippingDecorator(OrderComponent component) : base(component) { }
-    public override decimal GetTotal() => _component.GetTotal() + 25m;
+    public override decimal GetTotal() => _component.GetTotal() + 25000m;
 }

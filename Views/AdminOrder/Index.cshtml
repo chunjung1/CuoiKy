@@ -19,6 +19,7 @@
                             <th>Khách hàng</th>
                             <th>Ngày đặt</th>
                             <th>Tổng tiền</th>
+                            <th>Tùy chọn</th>
                             <th>Thanh toán</th>
                             <th>Trạng thái</th>
                             <th class="text-center pe-4">Thao tác</th>
@@ -35,6 +36,20 @@
                                 </td>
                                 <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
                                 <td class="fw-bold">@item.TotalAmount.ToString("N0")₫</td>
+                                <td>
+                                    @if (item.GiftWrap)
+                                    {
+                                        <span class="badge bg-warning text-dark me-1">Gói quà</span>
+                                    }
+                                    @if (item.ExpressShipping)
+                                    {
+                                        <span class="badge bg-danger">Hỏa tốc</span>
+                                    }
+                                    @if (!item.GiftWrap && !item.ExpressShipping)
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
                                 <td>
                                     @if (item.PaymentMethod == PaymentMethod.BankTransfer)
                                     {

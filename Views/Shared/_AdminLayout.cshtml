@@ -8,14 +8,24 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <style>
+        html, body {
+            height: 100%;
+        }
         body {
             background-color: #f4f7f6;
+            overflow: hidden;
+        }
+        .admin-shell {
+            height: 100vh;
         }
         .admin-sidebar {
-            min-height: 100vh;
+            height: 100vh;
+            overflow-y: auto;
             background: #2c3e50;
             color: #fff;
             transition: all 0.3s;
+            position: sticky;
+            top: 0;
         }
         .admin-sidebar .nav-link {
             color: #bdc3c7;
@@ -35,9 +45,12 @@
             background: #fff;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             padding: 15px 30px;
+            flex: 0 0 auto;
         }
         .content-wrapper {
             padding: 30px;
+            overflow-y: auto;
+            flex: 1 1 auto;
         }
         .card {
             border-radius: 10px;
@@ -53,7 +66,7 @@
     </style>
 </head>
 <body>
-    <div class="container-fluid p-0 d-flex">
+    <div class="container-fluid p-0 d-flex admin-shell">
         <!-- Sidebar -->
         <div class="admin-sidebar shadow-sm" style="width: 260px; flex-shrink: 0;">
             <div class="sidebar-heading border-bottom border-secondary">
@@ -99,7 +112,7 @@
         </div>
 
         <!-- Main Content -->
-        <div class="flex-grow-1 d-flex flex-column" style="min-width: 0;">
+        <div class="flex-grow-1 d-flex flex-column" style="min-width: 0; height: 100vh; overflow: hidden;">
             <header class="admin-header d-flex justify-content-between align-items-center">
                 <button class="btn btn-light d-md-none"><i class="fas fa-bars"></i></button>
                 <div class="breadcrumb mb-0 bg-transparent p-0">
@@ -119,7 +132,7 @@
                 @RenderBody()
             </main>
 
-            <footer class="mt-auto py-3 px-4 bg-white border-top text-center text-muted small">
+            <footer class="mt-auto py-3 px-4 bg-white border-top text-center text-muted small" style="flex: 0 0 auto;">
                 &copy; 2026 - TechStore Management System - All Rights Reserved
             </footer>
         </div>

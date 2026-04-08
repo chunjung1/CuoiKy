@@ -1,6 +1,8 @@
 @model CuoiKy.ViewModels.Cart
 @{
     ViewData["Title"] = "Thanh toán";
+    var selectedTotal = Model.Items.Where(i => i.IsSelected).Sum(i => i.Price * i.Quantity);
+    var selectedTotalInvariant = selectedTotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
 }
 
 <div class="container py-5">
@@ -46,6 +48,17 @@
                                 <option value="1">Chuyển khoản ngân hàng</option>
                             </select>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tuỳ chọn thêm</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="giftWrap" name="giftWrap" value="true" onchange="updateCheckoutTotal()">
+                                <label class="form-check-label" for="giftWrap">Gói quà (+15.000₫)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="expressShipping" name="expressShipping" value="true" onchange="updateCheckoutTotal()">
+                                <label class="form-check-label" for="expressShipping">Giao hỏa tốc (+25.000₫)</label>
+                            </div>
+                        </div>
                         <button type="submit" class="btn btn-primary btn-lg w-100 mt-3">Xác nhận đặt hàng</button>
                     </form>
                 </div>
@@ -72,10 +85,29 @@
                     </ul>
                     <div class="d-flex justify-content-between fw-bold fs-5 border-top pt-3">
                         <span>Tổng cộng</span>
-                        <span class="text-danger">@Model.GetTotalPrice().ToString("N0")₫</span>
+                        <span class="text-danger" id="checkoutGrandTotal" data-base-total="@selectedTotalInvariant">@selectedTotal.ToString("N0")₫</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    function updateCheckoutTotal() {
+        const totalEl = document.getElementById('checkoutGrandTotal');
+        if (!totalEl) return;
+
+        const baseTotal = parseFloat(totalEl.getAttribute('data-base-total') || '0');
+        const giftWrap = document.getElementById('giftWrap')?.checked === true;
+        const express = document.getElementById('expressShipping')?.checked === true;
+
+        let total = baseTotal;
+        if (giftWrap) total += 15000;
+        if (express) total += 25000;
+
+        totalEl.textContent = total.toLocaleString('vi-VN') + '₫';
+    }
+
+    updateCheckoutTotal();
+</script>

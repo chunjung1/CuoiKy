@@ -35,7 +35,8 @@ public class AdminRevenueController : Controller
 
         var totalRevenue = await ordersQuery.SumAsync(o => o.TotalAmount);
         var totalOrders = await ordersQuery.CountAsync();
-        var paidOrders = await ordersQuery.CountAsync(o => o.Status == OrderStatus.Paid);
+        var paidStatuses = new[] { OrderStatus.Paid, OrderStatus.Shipping, OrderStatus.Completed };
+        var paidOrders = await ordersQuery.CountAsync(o => paidStatuses.Contains(o.Status));
 
         var revenueByDays = await ordersQuery
             .GroupBy(o => o.CreatedAt.Date)

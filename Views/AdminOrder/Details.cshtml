@@ -19,6 +19,13 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
 
     <div class="row">
         <div class="col-lg-8">
@@ -89,7 +96,10 @@
                         <div class="mb-3">
                             <label class="form-label small text-muted">Cập nhật trạng thái mới:</label>
                             <select name="status" class="form-select" asp-for="Status">
-                                <option value="@OrderStatus.Pending">Chờ thanh toán</option>
+                                @if (Model.Status == OrderStatus.Pending)
+                                {
+                                    <option value="@OrderStatus.Pending">Chờ thanh toán</option>
+                                }
                                 <option value="@OrderStatus.Paid">Đã thanh toán</option>
                                 <option value="@OrderStatus.Shipping">Đang giao hàng</option>
                                 <option value="@OrderStatus.Completed">Hoàn thành</option>
@@ -117,6 +127,34 @@
                         <div class="d-flex align-items-center text-secondary fw-bold">
                             <i class="fas fa-money-bill-wave me-2 fa-2x"></i> Thanh toán khi nhận hàng (COD)
                         </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white fw-bold py-3">
+                    Tùy chọn đơn hàng
+                </div>
+                <div class="card-body">
+                    @if (Model.GiftWrap)
+                    {
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-gift text-warning me-2"></i>
+                            <span class="fw-bold">Gói quà</span>
+                            <span class="text-muted ms-2">(+15.000₫)</span>
+                        </div>
+                    }
+                    @if (Model.ExpressShipping)
+                    {
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-bolt text-danger me-2"></i>
+                            <span class="fw-bold">Giao hỏa tốc</span>
+                            <span class="text-muted ms-2">(+25.000₫)</span>
+                        </div>
+                    }
+                    @if (!Model.GiftWrap && !Model.ExpressShipping)
+                    {
+                        <span class="text-muted">Không có tùy chọn thêm.</span>
                     }
                 </div>
             </div>
