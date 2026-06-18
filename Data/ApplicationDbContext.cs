@@ -15,6 +15,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderItem> OrderItems { get; set; }
     public DbSet<User> Users { get; set; }
+    public DbSet<Coupon> Coupons { get; set; }
+    public DbSet<ProductReview> ProductReviews { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -25,11 +27,21 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Order>().ToTable("Orders");
         modelBuilder.Entity<OrderItem>().ToTable("OrderItems");
         modelBuilder.Entity<User>().ToTable("Users");
+        modelBuilder.Entity<Coupon>().ToTable("Coupons");
+        modelBuilder.Entity<ProductReview>().ToTable("ProductReviews");
 
         // Fix decimal precision warnings
         modelBuilder.Entity<Product>()
             .Property(p => p.Price)
             .HasColumnType("decimal(18,2)");
+
+        modelBuilder.Entity<Product>()
+            .Property(p => p.DiscountPrice)
+            .HasColumnType("decimal(18,2)");
+
+        modelBuilder.Entity<Product>()
+            .Property(p => p.BrandId)
+            .HasColumnName("BranchID");
 
         modelBuilder.Entity<Order>()
             .Property(o => o.TotalAmount)

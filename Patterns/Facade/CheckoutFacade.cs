@@ -40,6 +40,7 @@ public class CheckoutFacade
 
         // Update trạng thái order
         order.Status = OrderStatus.Pending;
+        order.PaymentStatus = PaymentStatus.Pending;
         var utcNow = DateTime.UtcNow;
         var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
         order.CreatedAt = TimeZoneInfo.ConvertTimeFromUtc(utcNow, tz);

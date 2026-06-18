@@ -31,7 +31,15 @@
                                         <td class="ps-3">
                                             <div class="d-flex align-items-center">
                                                 <img src="@(item.Product?.ImageUrl ?? "/lib/img/no-image.png")" class="rounded me-3" style="width: 52px; height: 52px; object-fit: contain; background: #f8f9fa;" alt="@item.Product?.Name" />
-                                                <div class="fw-bold">@item.Product?.Name</div>
+                                                <div>
+                                                    <div class="fw-bold">@item.Product?.Name</div>
+                                                    @if (Model.Status == OrderStatus.Completed)
+                                                    {
+                                                        <a href="/Product/Details/@item.ProductId" class="btn btn-sm btn-outline-warning py-0 px-2 mt-1" style="font-size: 0.75rem;">
+                                                            <i class="fas fa-star me-1"></i>Đánh giá
+                                                        </a>
+                                                    }
+                                                </div>
                                             </div>
                                         </td>
                                         <td class="text-center">@item.Quantity</td>
@@ -57,28 +65,80 @@
                 <div class="card-header bg-white fw-bold py-3">Trạng thái</div>
                 <div class="card-body">
                     <div class="mb-2 text-muted small">Ngày đặt: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                    <div class="mb-2">
+                        <strong class="small text-muted d-block mb-1">Thanh toán:</strong>
+                        @switch (Model.PaymentStatus)
+                        {
+                            case PaymentStatus.Pending:
+                                <span class="badge bg-warning text-dark">Chờ thanh toán</span>
+                                break;
+                            case PaymentStatus.Paid:
+                                <span class="badge bg-success">Đã thanh toán</span>
+                                break;
+                            case PaymentStatus.Failed:
+                                <span class="badge bg-danger">Thất bại</span>
+                                break;
+                        }
+                    </div>
                     <div>
+                        <strong class="small text-muted d-block mb-1">Vận chuyển:</strong>
                         @switch (Model.Status)
                         {
                             case OrderStatus.Pending:
-                                <span class="badge bg-warning text-dark">Chờ thanh toán</span>
+                                <span class="badge bg-secondary">Chờ xử lý</span>
                                 break;
                             case OrderStatus.Paid:
-                                <span class="badge bg-primary">Đã thanh toán</span>
+                                <span class="badge bg-primary">Đã xác nhận</span>
                                 break;
                             case OrderStatus.Shipping:
-                                <span class="badge bg-info">Đang giao hàng</span>
+                                <span class="badge bg-info">Đang vận chuyển</span>
                                 break;
                             case OrderStatus.Completed:
-                                <span class="badge bg-success">Hoàn thành</span>
+                                <span class="badge bg-success">Đã giao</span>
                                 break;
                             case OrderStatus.Canceled:
                                 <span class="badge bg-danger">Đã hủy</span>
                                 break;
                         }
+                        @if (Model.Status == OrderStatus.Canceled && !string.IsNullOrEmpty(Model.CancelReason))
+                        {
+                            <div class="mt-2 text-danger small">
+                                <i class="fas fa-info-circle me-1"></i><strong>Lý do hủy:</strong> @Model.CancelReason
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
+
+            @if (Model.Status == OrderStatus.Pending || Model.Status == OrderStatus.Paid)
+            {
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white fw-bold py-3 text-danger">Hủy đơn hàng</div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">Nếu bạn muốn hủy đơn hàng này, vui lòng bấm nút bên dưới để chọn lý do.</p>
+                        <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#cancelOrderModal" data-order-id="@Model.Id">
+                            <i class="fas fa-times me-1"></i>Hủy đơn hàng
+                        </button>
+                    </div>
+                </div>
+            }
+
+            @if (Model.Status == OrderStatus.Completed)
+            {
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white fw-bold py-3 text-success">Mua lại đơn hàng</div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">Bạn có thể mua lại toàn bộ sản phẩm trong đơn hàng này bằng cách nhấn nút dưới đây.</p>
+                        <form asp-controller="Cart" asp-action="Reorder" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="orderId" value="@Model.Id" />
+                            <button type="submit" class="btn btn-success w-100 shadow-sm">
+                                <i class="fas fa-redo me-1"></i>Mua lại đơn hàng
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
 
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white fw-bold py-3">Thông tin giao hàng</div>
@@ -91,4 +151,104 @@
         </div>
     </div>
 </div>
+
+<!-- Cancel Order Modal -->
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="cancelOrderModalLabel"><i class="fas fa-exclamation-triangle me-2"></i>Yêu cầu hủy đơn hàng</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="CancelOrder" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="cancelOrderId" value="" />
+                <div class="modal-body">
+                    <p class="text-muted">Vui lòng chọn lý do hủy đơn hàng:</p>
+                    
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="cancelOption" id="opt1" value="Tôi muốn thay đổi địa chỉ nhận hàng" checked>
+                        <label class="form-check-label" for="opt1">
+                            Tôi muốn thay đổi địa chỉ nhận hàng
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="cancelOption" id="opt2" value="Tôi muốn đổi phương thức thanh toán">
+                        <label class="form-check-label" for="opt2">
+                            Tôi muốn đổi phương thức thanh toán
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="cancelOption" id="opt3" value="Tôi muốn thay đổi các sản phẩm trong đơn hàng">
+                        <label class="form-check-label" for="opt3">
+                            Tôi muốn thay đổi các sản phẩm trong đơn hàng
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="cancelOption" id="opt4" value="Tìm thấy giá rẻ hơn ở nơi khác">
+                        <label class="form-check-label" for="opt4">
+                            Tìm thấy giá rẻ hơn ở nơi khác
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="cancelOption" id="opt5" value="Tôi không muốn mua nữa">
+                        <label class="form-check-label" for="opt5">
+                            Tôi không muốn mua nữa
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                         <input class="form-check-input" type="radio" name="cancelOption" id="opt6" value="Lý do khác">
+                         <label class="form-check-label" for="opt6">
+                             Lý do khác (Vui lòng nhập lý do cụ thể bên dưới)
+                         </label>
+                    </div>
+                    
+                    <div class="mb-3" id="otherReasonWrapper" style="display: none;">
+                        <textarea class="form-control" name="otherReason" id="otherReasonText" rows="3" placeholder="Nhập lý do hủy cụ thể của bạn tại đây..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-danger">Xác nhận hủy đơn</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const cancelModal = document.getElementById('cancelOrderModal');
+            if (cancelModal) {
+                cancelModal.addEventListener('show.bs.modal', function (event) {
+                    const button = event.relatedTarget;
+                    const orderId = button.getAttribute('data-order-id');
+                    const modalInput = cancelModal.querySelector('#cancelOrderId');
+                    modalInput.value = orderId;
+                    
+                    // reset Form
+                    document.getElementById('opt1').checked = true;
+                    document.getElementById('otherReasonText').value = '';
+                    document.getElementById('otherReasonWrapper').style.display = 'none';
+                });
+            }
+
+            // Add event listeners to radio buttons to show/hide textarea
+            const radioButtons = document.querySelectorAll('input[name="cancelOption"]');
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', function () {
+                    const otherWrapper = document.getElementById('otherReasonWrapper');
+                    if (this.value === 'Lý do khác') {
+                        otherWrapper.style.display = 'block';
+                        document.getElementById('otherReasonText').setAttribute('required', 'required');
+                    } else {
+                        otherWrapper.style.display = 'none';
+                        document.getElementById('otherReasonText').removeAttribute('required');
+                    }
+                });
+            });
+        });
+    </script>
+}
 

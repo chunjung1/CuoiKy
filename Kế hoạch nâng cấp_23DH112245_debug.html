@@ -1,0 +1,166 @@
+<html>
+<head>
+</head>
+<body>
+<h2 class="heading-section">SQL cũ
+</h2>
+<p><img src="images/k_ho_ch_n_ng_c_p_23dh112245_264144/image_001.png">
+</p>
+<p>
+</p>
+<h2 class="heading-section">Kiểm tra lại Chức năng.
+</h2>
+<ul>
+<li>
+<ol>
+<li><strong>Các chức năng đã thực hiện</strong>
+</li>
+</ol>
+</li>
+</ul>
+<p>
+</p>
+<p>
+</p>
+<p>-Hiển thị sản phẩm kèm hình ảnh
+</p>
+<p>-Có mô tả chi tiết
+</p>
+<p>-Lọc sản phẩm theo tên
+</p>
+<p>-Thêm giỏ hàng
+</p>
+<p>-Phân loại sản phẩm
+</p>
+<p>-Thanh toán
+</p>
+<p>-Lịch sử đơn hàng
+</p>
+<p>-Thống kê doanh thu theo ngày
+</p>
+<p>-Sản phẩm bán chạy
+</p>
+<p>-Quản lý người dùng
+</p>
+<p>-Quản lý đơn hàng
+</p>
+<p>-Thanh toán QR
+</p>
+<p>
+</p>
+<ul>
+<li>
+<ol>
+<li><strong>Các chức năng chưa thực hiện</strong>
+</li>
+</ol>
+</li>
+</ul>
+<p>
+</p>
+<p>-UI chưa đẹp mắt, tối ưu, gọn gàng
+</p>
+<p>-Giao diện thông tin khách hàng
+</p>
+<p>-Thống kê doanh thu chi tiết các ngày
+</p>
+<p>-Thống kê theo quý - năm
+</p>
+<p>-Dịch vụ chăm sóc khách hàng
+</p>
+<p>-Hủy hàng bên khách hàng
+</p>
+<p>-Gợi ý các sản phẩm có liên quan trong tìm kiếm
+</p>
+<p>-Thanh toán QR thực
+</p>
+<p>
+</p>
+<h2 class="heading-section">Nâng cấp và mở rộng CSDL
+</h2>
+<ul>
+<li>
+<ol>
+<li>Tinh chỉnh các bảng hiện tại
+</li>
+</ol>
+</li>
+</ul>
+<p>
+</p>
+<ul>
+<li><strong>Bảng Products:</strong>
+<ul>
+<li>Thêm cột BrandId (Khóa ngoại): Đồ công nghệ luôn gắn liền với thương hiệu (Apple, Samsung, Sony...).
+</li>
+<li>Thêm cột DiscountPrice (hoặc SalePrice): Thường xuyên có các chương trình giảm giá, bạn cần một cột để hiển thị giá gốc (gạch chéo) và giá khuyến mãi.
+</li>
+<li>Thêm cột Slug: Hỗ trợ SEO thân thiện trên thanh URL (ví dụ: /san-pham/iphone-15-pro-max).
+</li>
+</ul>
+</li>
+<li><strong>Bảng Orders:</strong>
+<ul>
+<li>Nên tách trạng thái thanh toán và trạng thái giao hàng. Hãy thêm cột PaymentStatus (Pending, Paid, Failed) bên cạnh cột Status (Processing, Shipped, Delivered) hiện tại.
+</li>
+</ul>
+<ol>
+<li>Đề xuất thêm các bảng mới
+</li>
+</ol>
+</li>
+<li><strong>Bảng Brands (Thương hiệu):</strong>* Gồm: Id, Name, LogoUrl.
+</li>
+</ul>
+<p><em>Lý do:</em>Cho phép người dùng lọc sản phẩm theo hãng (Ví dụ: Chỉ xem Laptop Dell).
+</p>
+<ul>
+<li><strong>Bảng ProductImages (Thư viện ảnh sản phẩm):</strong>
+</li>
+</ul>
+<p>Gồm: Id, ProductId (FK), ImageUrl, IsPrimary.
+</p>
+<p><em>Lý do:</em>Hiện tại bảng Products của bạn chỉ có 1 cột ImageUrl. Thực tế mỗi chiếc điện thoại hay laptop cần một bộ sưu tập (gallery) gồm nhiều góc chụp khác nhau.
+</p>
+<ul>
+<li><strong>Bảng ProductVariants (Biến thể sản phẩm - Rất quan trọng cho đồ công nghệ):</strong>
+</li>
+</ul>
+<p>Gồm: Id, ProductId (FK), Color, Storage (ROM), RAM, AdditionalPrice, StockQuantity.
+</p>
+<p><em>Lý do:</em>Một chiếc iPhone 15 sẽ có bản 128GB, 256GB và các màu khác nhau. Giá tiền và số lượng tồn kho của từng bản cũng khác nhau. Bảng này sẽ giải quyết triệt để vấn đề đó.
+</p>
+<ul>
+<li><strong>Bảng Reviews (Đánh giá &amp; Bình luận):</strong>
+</li>
+</ul>
+<p>Gồm: Id, ProductId (FK), UserId (FK), Rating (1-5 sao), Comment, CreatedAt.
+</p>
+<p><em>Lý do:</em>Tăng độ tin cậy cho cửa hàng. Giảng viên rất thích các chức năng có tính tương tác này.
+</p>
+<ul>
+<li><strong>Bảng Coupons / Promotions (Mã giảm giá):</strong>
+</li>
+</ul>
+<p>Gồm: Id,<code class="tech-term">Code</code>, DiscountPercent (hoặc DiscountAmount), ExpiryDate, UsageLimit.
+</p>
+<p><em>Lý do:</em>Dùng để áp dụng mã giảm giá lúc Checkout, giúp luồng thanh toán phức tạp và thực tế hơn.
+</p>
+<h2 class="heading-section">Kế hoạch nâng cấp
+</h2>
+<p>Tuần 1: Cải thiện Giao diện &amp; Chuẩn bị nền tảng dữ liệu
+</p>
+<p>Tuần 2: Quản lý Hồ sơ &amp; Trải nghiệm Hủy đơn
+</p>
+<p>Tuần 3: Tối ưu Tìm kiếm &amp; Gợi ý &amp; Thanh toán trực tuyến thực tế
+</p>
+<p>Tuần 4: Tính năng Voucher
+</p>
+<p>Tuần 5: Nâng cấp chức năng cho Quản trị viên (Admin)
+</p>
+<p>Tuần 6: Dịch vụ Chăm sóc Khách hàng
+</p>
+<p>Tuần 7: Kiểm thử (Testing) &amp; Hoàn thiện Báo cáo
+</p>
+</body>
+</html>

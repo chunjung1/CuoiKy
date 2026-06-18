@@ -17,26 +17,36 @@ public class AdminRevenueController : Controller
         _dbContext = dbContext;
     }
 
-    public async Task<IActionResult> Index(DateTime? startDate, DateTime? endDate)
+    public async Task<IActionResult> Index(DateTime? startDate, DateTime? endDate, string? filterType, int? year)
     {
-        var end = (endDate?.Date ?? DateTime.Today).AddDays(1).AddTicks(-1);
-        var start = startDate?.Date ?? DateTime.Today.AddDays(-29);
+        string type = filterType ?? "day";
+        int selectedYear = year ?? DateTime.Today.Year;
 
-        if (start > end)
+        DateTime start;
+        DateTime end;
+
+        if (type == "month" || type == "quarter")
         {
-            (start, end) = (end.Date, start.Date.AddDays(1).AddTicks(-1));
+            start = new DateTime(selectedYear, 1, 1);
+            end = new DateTime(selectedYear, 12, 31, 23, 59, 59, 999);
         }
-
-        var revenueStatuses = new[] { OrderStatus.Paid, OrderStatus.Shipping, OrderStatus.Completed };
+        else // "day"
+        {
+            end = (endDate?.Date ?? DateTime.Today).AddDays(1).AddTicks(-1);
+            start = startDate?.Date ?? DateTime.Today.AddDays(-29);
+            if (start > end)
+            {
+                (start, end) = (end.Date, start.Date.AddDays(1).AddTicks(-1));
+            }
+        }
 
         var ordersQuery = _dbContext.Orders
             .Where(o => o.CreatedAt >= start && o.CreatedAt <= end)
-            .Where(o => revenueStatuses.Contains(o.Status));
+            .Where(o => o.PaymentStatus == PaymentStatus.Paid);
 
         var totalRevenue = await ordersQuery.SumAsync(o => o.TotalAmount);
         var totalOrders = await ordersQuery.CountAsync();
-        var paidStatuses = new[] { OrderStatus.Paid, OrderStatus.Shipping, OrderStatus.Completed };
-        var paidOrders = await ordersQuery.CountAsync(o => paidStatuses.Contains(o.Status));
+        var paidOrders = totalOrders;
 
         var revenueByDays = await ordersQuery
             .GroupBy(o => o.CreatedAt.Date)
@@ -49,11 +59,72 @@ public class AdminRevenueController : Controller
             .OrderBy(x => x.Date)
             .ToListAsync();
 
+        var groupedItems = new List<RevenueGroupedItem>();
+
+        if (type == "month")
+        {
+            var query = await ordersQuery
+                .GroupBy(o => o.CreatedAt.Month)
+                .Select(g => new
+                {
+                    Month = g.Key,
+                    Revenue = g.Sum(x => x.TotalAmount),
+                    Orders = g.Count()
+                })
+                .ToListAsync();
+
+            for (int m = 1; m <= 12; m++)
+            {
+                var match = query.FirstOrDefault(x => x.Month == m);
+                groupedItems.Add(new RevenueGroupedItem
+                {
+                    Label = $"Tháng {m:00}",
+                    Revenue = match?.Revenue ?? 0m,
+                    Orders = match?.Orders ?? 0
+                });
+            }
+        }
+        else if (type == "quarter")
+        {
+            var query = await ordersQuery
+                .GroupBy(o => (o.CreatedAt.Month - 1) / 3 + 1)
+                .Select(g => new
+                {
+                    Quarter = g.Key,
+                    Revenue = g.Sum(x => x.TotalAmount),
+                    Orders = g.Count()
+                })
+                .ToListAsync();
+
+            for (int q = 1; q <= 4; q++)
+            {
+                var match = query.FirstOrDefault(x => x.Quarter == q);
+                groupedItems.Add(new RevenueGroupedItem
+                {
+                    Label = $"Quý {q}",
+                    Revenue = match?.Revenue ?? 0m,
+                    Orders = match?.Orders ?? 0
+                });
+            }
+        }
+        else // "day"
+        {
+            foreach (var r in revenueByDays)
+            {
+                groupedItems.Add(new RevenueGroupedItem
+                {
+                    Label = r.Date.ToString("dd/MM"),
+                    Revenue = r.Revenue,
+                    Orders = r.Orders
+                });
+            }
+        }
+
         var topProductsRaw = await (
                 from oi in _dbContext.OrderItems
                 join o in _dbContext.Orders on oi.OrderId equals o.Id
                 where o.CreatedAt >= start && o.CreatedAt <= end
-                where revenueStatuses.Contains(o.Status)
+                where o.PaymentStatus == PaymentStatus.Paid
                 group oi by oi.ProductId into g
                 select new
                 {
@@ -86,10 +157,13 @@ public class AdminRevenueController : Controller
         {
             StartDate = start,
             EndDate = end,
+            FilterType = type,
+            SelectedYear = selectedYear,
             TotalRevenue = totalRevenue,
             TotalOrders = totalOrders,
             PaidOrders = paidOrders,
             RevenueByDays = revenueByDays,
+            RevenueGroupedItems = groupedItems,
             TopProducts = topProducts
         };
 

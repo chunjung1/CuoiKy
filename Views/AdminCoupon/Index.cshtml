@@ -1,0 +1,169 @@
+@model IEnumerable<CuoiKy.Models.Coupon>
+@{
+    ViewData["Title"] = "Quản lý mã giảm giá - TechStore";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold"><i class="fas fa-ticket-alt me-2 text-primary"></i>Quản lý mã giảm giá</h2>
+        <a asp-action="Create" class="btn btn-primary shadow-sm">
+            <i class="fas fa-plus-circle me-1"></i> Tạo mã giảm giá mới
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Mã Code</th>
+                            <th>Mức giảm giá</th>
+                            <th>Ngày hết hạn</th>
+                            <th>Giới hạn sử dụng</th>
+                            <th>Đã dùng</th>
+                            <th class="text-center">Trạng thái</th>
+                            <th class="text-center pe-4">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="fas fa-ticket-alt fa-3x mb-3"></i>
+                                    <p class="mb-0">Chưa có mã giảm giá nào được tạo.</p>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model)
+                            {
+                                var isExpired = item.ExpiryDate < DateTime.Now;
+                                var isLimitReached = item.UsedCount >= item.UsageLimit;
+                                var isActive = !isExpired && !isLimitReached;
+
+                                <tr id="coupon-row-@item.Id">
+                                    <td class="ps-4 fw-bold text-dark">
+                                        <span class="font-monospace bg-light border px-2 py-1 rounded">@item.Code</span>
+                                    </td>
+                                    <td class="fw-bold text-success">@item.DiscountPercent%</td>
+                                    <td>@item.ExpiryDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@item.UsageLimit</td>
+                                    <td>@item.UsedCount</td>
+                                    <td class="text-center">
+                                        @if (isExpired)
+                                        {
+                                            <span class="badge bg-danger">Hết hạn</span>
+                                        }
+                                        else if (isLimitReached)
+                                        {
+                                            <span class="badge bg-warning text-dark">Hết lượt dùng</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">Đang hoạt động</span>
+                                        }
+                                    </td>
+                                    <td class="text-center pe-4">
+                                        <div class="btn-group shadow-sm rounded">
+                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-warning btn-sm" title="Sửa">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="confirmDelete(@item.Id, '@item.Code')" title="Xóa">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-exclamation-circle fa-4x text-danger mb-3"></i>
+                <p class="fs-5 mb-0">Bạn có chắc chắn muốn xóa mã giảm giá:</p>
+                <p class="fw-bold fs-4 text-primary mt-2" id="deleteCouponCode"></p>
+                <p class="text-muted small">Hành động này không thể hoàn tác.</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                <form id="deleteForm" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="deleteCouponId" name="id" />
+                    <button type="button" onclick="executeDelete()" class="btn btn-danger px-4 shadow-sm">Đồng ý xóa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let couponToDelete = 0;
+
+        function confirmDelete(id, code) {
+            couponToDelete = id;
+            document.getElementById('deleteCouponCode').innerText = code;
+            document.getElementById('deleteCouponId').value = id;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+
+        function executeDelete() {
+            const id = document.getElementById('deleteCouponId').value;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            const formData = new URLSearchParams();
+            formData.append('id', id);
+            formData.append('__RequestVerificationToken', token);
+
+            fetch(`/AdminCoupon/Delete/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: formData.toString()
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                    const row = document.getElementById(`coupon-row-${id}`);
+                    row.style.transition = 'all 0.5s';
+                    row.style.opacity = '0';
+                    row.style.transform = 'translateX(20px)';
+                    setTimeout(() => row.remove(), 500);
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi xóa mã giảm giá.');
+            });
+        }
+    </script>
+}

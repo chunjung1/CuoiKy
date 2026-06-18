@@ -24,6 +24,7 @@
                 </div>
                 <div class="card-body">
                     <form asp-action="ProcessCheckout" method="post">
+                        <input type="hidden" name="couponCode" id="appliedCouponCode" />
                         <div class="mb-3">
                             <label class="form-label">Họ và tên người nhận</label>
                             <input type="text" name="customerName" class="form-control" required value="@User.Identity?.Name" />
@@ -83,6 +84,21 @@
                             </li>
                         }
                     </ul>
+                    
+                    <div class="mb-3 pt-3 border-top">
+                        <label class="form-label small fw-bold">Mã giảm giá</label>
+                        <div class="input-group">
+                            <input type="text" id="couponCodeInput" class="form-control form-control-sm text-uppercase" placeholder="Nhập mã..." />
+                            <button class="btn btn-outline-primary btn-sm" type="button" onclick="applyCouponCode()">Áp dụng</button>
+                        </div>
+                        <div id="couponStatusMessage" class="small mt-1 d-none"></div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between text-success mb-2 d-none" id="discountRow">
+                        <span>Giảm giá (<span id="discountPercentLabel">0</span>%)</span>
+                        <span id="discountAmountLabel">-0₫</span>
+                    </div>
+
                     <div class="d-flex justify-content-between fw-bold fs-5 border-top pt-3">
                         <span>Tổng cộng</span>
                         <span class="text-danger" id="checkoutGrandTotal" data-base-total="@selectedTotalInvariant">@selectedTotal.ToString("N0")₫</span>
@@ -94,6 +110,57 @@
 </div>
 
 <script>
+    let appliedDiscountPercent = 0;
+
+    function applyCouponCode() {
+        const input = document.getElementById('couponCodeInput');
+        const msgEl = document.getElementById('couponStatusMessage');
+        const code = (input.value || '').trim();
+
+        if (!code) {
+            msgEl.className = 'small mt-1 text-danger';
+            msgEl.textContent = 'Vui lòng nhập mã giảm giá.';
+            msgEl.classList.remove('d-none');
+            return;
+        }
+
+        fetch('/Cart/ApplyCoupon?code=' + encodeURIComponent(code))
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    appliedDiscountPercent = data.discountPercent;
+                    document.getElementById('appliedCouponCode').value = code;
+                    
+                    msgEl.className = 'small mt-1 text-success';
+                    msgEl.textContent = `Áp dụng mã giảm giá thành công! Giảm ${data.discountPercent}%.`;
+                    msgEl.classList.remove('d-none');
+                    
+                    // Show discount row
+                    const discountRow = document.getElementById('discountRow');
+                    discountRow.classList.remove('d-none');
+                    document.getElementById('discountPercentLabel').textContent = data.discountPercent;
+                    
+                    updateCheckoutTotal();
+                } else {
+                    appliedDiscountPercent = 0;
+                    document.getElementById('appliedCouponCode').value = '';
+                    document.getElementById('discountRow').classList.add('d-none');
+                    
+                    msgEl.className = 'small mt-1 text-danger';
+                    msgEl.textContent = data.message || 'Mã giảm giá không hợp lệ.';
+                    msgEl.classList.remove('d-none');
+                    
+                    updateCheckoutTotal();
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                msgEl.className = 'small mt-1 text-danger';
+                msgEl.textContent = 'Có lỗi xảy ra khi áp dụng mã giảm giá.';
+                msgEl.classList.remove('d-none');
+            });
+    }
+
     function updateCheckoutTotal() {
         const totalEl = document.getElementById('checkoutGrandTotal');
         if (!totalEl) return;
@@ -103,6 +170,13 @@
         const express = document.getElementById('expressShipping')?.checked === true;
 
         let total = baseTotal;
+        const discountAmount = Math.round(baseTotal * (appliedDiscountPercent / 100));
+        
+        if (appliedDiscountPercent > 0) {
+            document.getElementById('discountAmountLabel').textContent = '-' + discountAmount.toLocaleString('vi-VN') + '₫';
+            total = total - discountAmount;
+        }
+
         if (giftWrap) total += 15000;
         if (express) total += 25000;
 

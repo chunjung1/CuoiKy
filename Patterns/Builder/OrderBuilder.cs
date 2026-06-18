@@ -34,7 +34,9 @@ public class OrderBuilder
             ProductId = product.Id,
             Product = product,
             Quantity = quantity,
-            UnitPrice = product.Price,
+            UnitPrice = product.DiscountPrice.HasValue && product.DiscountPrice.Value < product.Price
+                        ? product.DiscountPrice.Value
+                        : product.Price,
         };
         _order.Items.Add(item);
         _total += item.TotalPrice;

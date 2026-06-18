@@ -93,21 +93,35 @@
                     <form asp-action="UpdateStatus" method="post">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@Model.Id" />
+                        
                         <div class="mb-3">
-                            <label class="form-label small text-muted">Cập nhật trạng thái mới:</label>
+                            <label class="form-label small text-muted fw-bold">Trạng thái giao hàng:</label>
                             <select name="status" class="form-select" asp-for="Status">
-                                @if (Model.Status == OrderStatus.Pending)
-                                {
-                                    <option value="@OrderStatus.Pending">Chờ thanh toán</option>
-                                }
-                                <option value="@OrderStatus.Paid">Đã thanh toán</option>
+                                <option value="@OrderStatus.Pending">Chờ xử lý</option>
+                                <option value="@OrderStatus.Paid">Đã xác nhận</option>
                                 <option value="@OrderStatus.Shipping">Đang giao hàng</option>
                                 <option value="@OrderStatus.Completed">Hoàn thành</option>
                                 <option value="@OrderStatus.Canceled">Đã hủy</option>
                             </select>
                         </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small text-muted fw-bold">Trạng thái thanh toán:</label>
+                            <select name="paymentStatus" class="form-select" asp-for="PaymentStatus">
+                                <option value="@PaymentStatus.Pending">Chờ thanh toán</option>
+                                <option value="@PaymentStatus.Paid">Đã thanh toán</option>
+                                <option value="@PaymentStatus.Failed">Thất bại</option>
+                            </select>
+                        </div>
+
                         <button type="submit" class="btn btn-primary w-100 shadow-sm">Cập nhật trạng thái</button>
                     </form>
+                    @if (Model.Status == OrderStatus.Canceled && !string.IsNullOrEmpty(Model.CancelReason))
+                    {
+                        <div class="alert alert-danger mt-3 mb-0 py-2 small">
+                            <i class="fas fa-times-circle me-1"></i><strong>Lý do hủy:</strong> @Model.CancelReason
+                        </div>
+                    }
                 </div>
             </div>
 

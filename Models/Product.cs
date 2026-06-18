@@ -32,4 +32,11 @@ public class Product
 
     [Display(Name = "Hình ảnh sản phẩm")]
     public string? ImageUrl { get; set; }
+
+    [Range(0, double.MaxValue, ErrorMessage = "Giá khuyến mãi không được âm")]
+    [Display(Name = "Giá khuyến mãi")]
+    public decimal? DiscountPrice { get; set; }
+
+    [Display(Name = "Thương hiệu")]
+    public string? BrandId { get; set; }
 }

@@ -29,7 +29,9 @@ namespace CuoiKy.ViewModels
                 {
                     ProductId = product.Id,
                     Name = product.Name,
-                    Price = product.Price,
+                    Price = product.DiscountPrice.HasValue && product.DiscountPrice.Value < product.Price 
+                            ? product.DiscountPrice.Value 
+                            : product.Price,
                     Quantity = quantity,
                     ImageUrl = product.ImageUrl
                 });

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using CuoiKy.Data;
 using CuoiKy.Models;
 using CuoiKy.ViewModels;
@@ -199,8 +200,36 @@ namespace CuoiKy.Controllers
             return View(cart);
         }
 
+        [HttpGet]
+        public IActionResult ApplyCoupon(string code)
+        {
+            code = (code ?? string.Empty).ToUpper().Trim();
+            if (string.IsNullOrEmpty(code))
+            {
+                return Json(new { success = false, message = "Vui lòng nhập mã giảm giá." });
+            }
+
+            var coupon = _dbContext.Coupons.FirstOrDefault(c => c.Code == code);
+            if (coupon == null)
+            {
+                return Json(new { success = false, message = "Mã giảm giá không tồn tại." });
+            }
+
+            if (coupon.ExpiryDate < DateTime.Now)
+            {
+                return Json(new { success = false, message = "Mã giảm giá đã hết hạn." });
+            }
+
+            if (coupon.UsedCount >= coupon.UsageLimit)
+            {
+                return Json(new { success = false, message = "Mã giảm giá đã hết lượt sử dụng." });
+            }
+
+            return Json(new { success = true, discountPercent = coupon.DiscountPercent });
+        }
+
         [HttpPost]
-        public IActionResult ProcessCheckout(string customerName, string phoneNumber, string shippingAddress, PaymentMethod paymentMethod, bool giftWrap = false, bool expressShipping = false)
+        public IActionResult ProcessCheckout(string customerName, string phoneNumber, string shippingAddress, PaymentMethod paymentMethod, string? couponCode, bool giftWrap = false, bool expressShipping = false)
         {
             if (IsAdminUser())
             {
@@ -228,6 +257,29 @@ namespace CuoiKy.Controllers
                 }
             }
 
+            decimal baseTotal = selectedItems.Sum(i => i.Price * i.Quantity);
+            decimal discountPercent = 0;
+            if (!string.IsNullOrWhiteSpace(couponCode))
+            {
+                var coupon = _dbContext.Coupons.FirstOrDefault(c => c.Code.ToUpper() == couponCode.ToUpper().Trim());
+                if (coupon != null)
+                {
+                    if (coupon.ExpiryDate < DateTime.Now)
+                    {
+                        TempData["ErrorMessage"] = "Mã giảm giá đã hết hạn.";
+                        return RedirectToAction(nameof(Checkout));
+                    }
+                    if (coupon.UsedCount >= coupon.UsageLimit)
+                    {
+                        TempData["ErrorMessage"] = "Mã giảm giá đã hết lượt sử dụng.";
+                        return RedirectToAction(nameof(Checkout));
+                    }
+                    discountPercent = coupon.DiscountPercent;
+                    coupon.UsedCount++;
+                    _dbContext.Coupons.Update(coupon);
+                }
+            }
+
             var order = new Order
             {
                 UserId = userId,
@@ -237,8 +289,9 @@ namespace CuoiKy.Controllers
                 PhoneNumber = phoneNumber,
                 ShippingAddress = shippingAddress,
                 PaymentMethod = paymentMethod,
-                TotalAmount = selectedItems.Sum(i => i.Price * i.Quantity),
+                TotalAmount = baseTotal * (1 - discountPercent / 100),
                 Status = OrderStatus.Pending,
+                PaymentStatus = PaymentStatus.Pending,
                 Items = selectedItems.Select(i => new OrderItem
                 {
                     ProductId = i.ProductId,
@@ -291,6 +344,56 @@ namespace CuoiKy.Controllers
             }
 
             return View(order);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Reorder(int orderId)
+        {
+            if (IsAdminUser())
+            {
+                TempData["ErrorMessage"] = "Admin không thể mua lại đơn hàng.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var order = await _dbContext.Orders
+                .Include(o => o.Items)
+                .ThenInclude(oi => oi.Product)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            var cart = GetCart();
+            int addedCount = 0;
+
+            foreach (var item in order.Items)
+            {
+                if (item.Product != null && item.Product.StockQuantity > 0)
+                {
+                    int qtyToAdd = Math.Min(item.Quantity, item.Product.StockQuantity);
+                    cart.AddItem(item.Product, qtyToAdd);
+                    
+                    var cartItem = cart.Items.FirstOrDefault(i => i.ProductId == item.ProductId);
+                    if (cartItem != null)
+                    {
+                        cartItem.IsSelected = true;
+                    }
+                    
+                    addedCount++;
+                }
+            }
+
+            if (addedCount == 0)
+            {
+                TempData["ErrorMessage"] = "Không thể mua lại đơn hàng vì các sản phẩm đều đã hết hàng.";
+                return RedirectToAction("MyOrders", "Order");
+            }
+
+            SaveCart(cart);
+            TempData["SuccessMessage"] = $"Đã thêm {addedCount} sản phẩm từ đơn hàng #{orderId} vào giỏ hàng.";
+            return RedirectToAction(nameof(Index));
         }
     }
 }

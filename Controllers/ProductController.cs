@@ -76,6 +76,8 @@ public class ProductController : Controller
             existingProduct.Name = product.Name;
             existingProduct.CategoryId = product.CategoryId;
             existingProduct.Price = product.Price;
+            existingProduct.DiscountPrice = product.DiscountPrice;
+            existingProduct.BrandId = product.BrandId;
             existingProduct.StockQuantity = product.StockQuantity;
             existingProduct.Description = product.Description;
 
@@ -134,6 +136,8 @@ public class ProductController : Controller
                 name = p.Name,
                 imageUrl = p.ImageUrl,
                 price = p.Price,
+                discountPrice = p.DiscountPrice,
+                brandId = p.BrandId,
                 stockQuantity = p.StockQuantity
             })
             .Take(6)
@@ -150,6 +154,39 @@ public class ProductController : Controller
         {
             return NotFound();
         }
+
+        // Fetch reviews
+        var reviews = await _dbContext.ProductReviews
+            .Include(r => r.User)
+            .Where(r => r.ProductId == id)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
+        ViewBag.Reviews = reviews;
+
+        // Check if user is eligible to write a review
+        bool canReview = false;
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var username = User.Identity.Name;
+            var email = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value;
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Username == username || u.Email == email);
+            if (user != null)
+            {
+                var hasPurchased = await _dbContext.Orders
+                    .AnyAsync(o => o.UserId == user.Id && 
+                                   (o.Status == OrderStatus.Completed || o.Status == OrderStatus.Paid || o.Status == OrderStatus.Shipping) && 
+                                   o.Items.Any(i => i.ProductId == id));
+
+                if (hasPurchased)
+                {
+                    var alreadyReviewed = await _dbContext.ProductReviews
+                        .AnyAsync(r => r.ProductId == id && r.UserId == user.Id);
+                    canReview = !alreadyReviewed;
+                }
+            }
+        }
+        ViewBag.CanReview = canReview;
+
         return View(product);
     }
 

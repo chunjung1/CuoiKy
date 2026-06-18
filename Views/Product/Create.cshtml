@@ -54,6 +54,21 @@
                                     </div>
                                     <span asp-validation-for="Price" class="text-danger small"></span>
                                 </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="DiscountPrice" class="form-label fw-bold"></label>
+                                    <div class="input-group">
+                                        <input asp-for="DiscountPrice" type="number" step="0.01" class="form-control" placeholder="0.00" />
+                                        <span class="input-group-text bg-light fw-bold">đ</span>
+                                    </div>
+                                    <span asp-validation-for="DiscountPrice" class="text-danger small"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="BrandId" class="form-label fw-bold"></label>
+                                    <input asp-for="BrandId" type="text" class="form-control" placeholder="Nhập tên thương hiệu (Apple, Oppo, Samsung...)..." />
+                                    <span asp-validation-for="BrandId" class="text-danger small"></span>
+                                </div>
                             </div>
 
                             <div class="col-md-4">

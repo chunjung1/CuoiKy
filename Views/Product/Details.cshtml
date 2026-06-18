@@ -49,10 +49,26 @@
         </div>
         <div class="col-lg-6">
             <h1 class="fw-bold display-5">@Model.Name</h1>
-            <p class="text-muted">Loại sản phẩm: <span class="badge bg-secondary">@(Model.Category?.Name ?? "-")</span></p>
+            <p class="text-muted">
+                Loại sản phẩm: <span class="badge bg-secondary">@(Model.Category?.Name ?? "-")</span>
+                @if (!string.IsNullOrEmpty(Model.BrandId))
+                {
+                    <span class="ms-2">Thương hiệu: <span class="badge bg-dark">@Model.BrandId</span></span>
+                }
+            </p>
             
             <div class="my-4">
-                <p class="price-tag-detail">@Model.Price.ToString("N0")₫</p>
+                @if (Model.DiscountPrice.HasValue && Model.DiscountPrice.Value < Model.Price)
+                {
+                    <div class="d-flex align-items-baseline mb-2">
+                        <span class="price-tag-detail me-3">@Model.DiscountPrice.Value.ToString("N0")₫</span>
+                        <span class="text-muted text-decoration-line-through fs-4">@Model.Price.ToString("N0")₫</span>
+                    </div>
+                }
+                else
+                {
+                    <p class="price-tag-detail">@Model.Price.ToString("N0")₫</p>
+                }
                 @if (Model.StockQuantity > 0)
                 {
                     <p class="stock-status in-stock fw-bold">
@@ -80,5 +96,261 @@
         </div>
     </div>
 
-    <!-- You can add related products section here -->
+    @{
+        var reviews = ViewBag.Reviews as List<CuoiKy.Models.ProductReview> ?? new List<CuoiKy.Models.ProductReview>();
+        var avgRating = reviews.Any() ? reviews.Average(r => r.Rating) : 0;
+        var canReview = ViewBag.CanReview as bool? ?? false;
+    }
+
+    <hr class="my-5" />
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <i class="fas fa-check-circle me-2"></i> @Html.Raw(TempData["SuccessMessage"])
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i> @Html.Raw(TempData["ErrorMessage"])
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row g-5">
+        <div class="col-12 col-lg-8">
+            <h3 class="fw-bold mb-4"><i class="fas fa-comments me-2"></i>Đánh giá từ khách hàng (@reviews.Count)</h3>
+            
+            @if (!reviews.Any())
+            {
+                <div class="card border-0 bg-light shadow-sm text-center py-5">
+                    <div class="card-body">
+                        <i class="far fa-star fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Chưa có đánh giá nào cho sản phẩm này.</h5>
+                        <p class="text-muted small mb-0">Hãy là người mua đầu tiên và chia sẻ cảm nhận của bạn!</p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex align-items-center mb-4 p-3 bg-light rounded-3 shadow-sm flex-wrap gap-3">
+                    <div class="text-center px-4 border-end">
+                        <h1 class="display-4 fw-bold text-warning mb-0">@avgRating.ToString("F1")</h1>
+                        <div class="text-warning fs-5">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                if (i <= Math.Round(avgRating))
+                                {
+                                    <i class="fas fa-star"></i>
+                                }
+                                else
+                                {
+                                    <i class="far fa-star"></i>
+                                }
+                            }
+                        </div>
+                        <span class="text-muted small">Đánh giá trung bình</span>
+                    </div>
+                    <div class="ps-2 flex-grow-1" style="min-width: 250px;">
+                        <div class="d-flex align-items-center mb-1">
+                            <span class="small me-2" style="width: 50px;">5 sao</span>
+                            <div class="progress flex-grow-1" style="height: 8px;">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: @(reviews.Any() ? (reviews.Count(r => r.Rating == 5) * 100 / reviews.Count) : 0)%"></div>
+                            </div>
+                            <span class="small text-muted ms-2">@reviews.Count(r => r.Rating == 5)</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-1">
+                            <span class="small me-2" style="width: 50px;">4 sao</span>
+                            <div class="progress flex-grow-1" style="height: 8px;">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: @(reviews.Any() ? (reviews.Count(r => r.Rating == 4) * 100 / reviews.Count) : 0)%"></div>
+                            </div>
+                            <span class="small text-muted ms-2">@reviews.Count(r => r.Rating == 4)</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-1">
+                            <span class="small me-2" style="width: 50px;">3 sao</span>
+                            <div class="progress flex-grow-1" style="height: 8px;">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: @(reviews.Any() ? (reviews.Count(r => r.Rating == 3) * 100 / reviews.Count) : 0)%"></div>
+                            </div>
+                            <span class="small text-muted ms-2">@reviews.Count(r => r.Rating == 3)</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-1">
+                            <span class="small me-2" style="width: 50px;">2 sao</span>
+                            <div class="progress flex-grow-1" style="height: 8px;">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: @(reviews.Any() ? (reviews.Count(r => r.Rating == 2) * 100 / reviews.Count) : 0)%"></div>
+                            </div>
+                            <span class="small text-muted ms-2">@reviews.Count(r => r.Rating == 2)</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="small me-2" style="width: 50px;">1 sao</span>
+                            <div class="progress flex-grow-1" style="height: 8px;">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: @(reviews.Any() ? (reviews.Count(r => r.Rating == 1) * 100 / reviews.Count) : 0)%"></div>
+                            </div>
+                            <span class="small text-muted ms-2">@reviews.Count(r => r.Rating == 1)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="review-list">
+                    @foreach (var review in reviews)
+                    {
+                        <div class="card border-0 shadow-sm mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="fw-bold mb-0"><i class="fas fa-user-circle me-1 text-secondary"></i>@review.User?.Username</h6>
+                                        <div class="text-warning small my-1">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                if (i <= review.Rating)
+                                                {
+                                                    <i class="fas fa-star"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="far fa-star"></i>
+                                                }
+                                            }
+                                        </div>
+                                    </div>
+                                    <span class="text-muted small">@review.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                                </div>
+                                <p class="card-text text-muted mb-0" style="white-space: pre-line;">@review.Comment</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        
+        <div class="col-12 col-lg-4">
+            @if (canReview)
+            {
+                <div class="card border-0 shadow-sm sticky-top" style="top: 2rem; z-index: 10;">
+                    <div class="card-header bg-primary text-white fw-bold py-3">
+                        <i class="fas fa-pen-nib me-2"></i>Viết đánh giá sản phẩm
+                    </div>
+                    <div class="card-body">
+                        <form asp-controller="ProductReview" asp-action="Add" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="productId" value="@Model.Id" />
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Chọn mức độ hài lòng:</label>
+                                <div class="rating-stars-input d-flex gap-2 text-warning fs-3 mb-2">
+                                    <i class="far fa-star rating-star-item" data-value="1" style="cursor: pointer;"></i>
+                                    <i class="far fa-star rating-star-item" data-value="2" style="cursor: pointer;"></i>
+                                    <i class="far fa-star rating-star-item" data-value="3" style="cursor: pointer;"></i>
+                                    <i class="far fa-star rating-star-item" data-value="4" style="cursor: pointer;"></i>
+                                    <i class="far fa-star rating-star-item" data-value="5" style="cursor: pointer;"></i>
+                                </div>
+                                <input type="hidden" name="rating" id="selectedRatingValue" value="5" />
+                                <div class="text-muted small" id="ratingDesc">Tuyệt vời</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small" for="reviewCommentText">Nhận xét của bạn:</label>
+                                <textarea class="form-control" name="comment" id="reviewCommentText" rows="4" required placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."></textarea>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary w-100 shadow-sm">
+                                <i class="fas fa-paper-plane me-1"></i>Gửi đánh giá
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+            else if (User.Identity?.IsAuthenticated == true)
+            {
+                <div class="card border-0 bg-light shadow-sm text-center py-4">
+                    <div class="card-body text-muted">
+                        <i class="fas fa-info-circle fa-2x mb-2"></i>
+                        <p class="small mb-0">Bạn chỉ có thể đánh giá sản phẩm nếu đã mua sản phẩm này và chưa gửi đánh giá nào trước đó.</p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card border-0 bg-light shadow-sm text-center py-4">
+                    <div class="card-body">
+                        <i class="fas fa-lock fa-2x text-muted mb-2"></i>
+                        <p class="small text-muted">Vui lòng đăng nhập để viết đánh giá sản phẩm.</p>
+                        <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="/Product/Details/@Model.Id" class="btn btn-primary btn-sm">Đăng nhập</a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const starItems = document.querySelectorAll(".rating-star-item");
+        const ratingInput = document.getElementById("selectedRatingValue");
+        const ratingDesc = document.getElementById("ratingDesc");
+        
+        if (starItems.length > 0) {
+            const descriptions = {
+                1: "Rất tệ",
+                2: "Tệ",
+                3: "Bình thường",
+                4: "Tốt",
+                5: "Tuyệt vời"
+            };
+            
+            function highlightStars(val) {
+                starItems.forEach(star => {
+                    const starVal = parseInt(star.getAttribute("data-value"));
+                    if (starVal <= val) {
+                        star.classList.remove("far");
+                        star.classList.add("fas");
+                    } else {
+                        star.classList.remove("fas");
+                        star.classList.add("far");
+                    }
+                });
+                if (ratingInput) ratingInput.value = val;
+                if (ratingDesc) ratingDesc.textContent = descriptions[val];
+            }
+            
+            // Default highlight to 5
+            highlightStars(5);
+            
+            starItems.forEach(star => {
+                star.addEventListener("click", function() {
+                    const val = parseInt(this.getAttribute("data-value"));
+                    highlightStars(val);
+                });
+                
+                star.addEventListener("mouseover", function() {
+                    const val = parseInt(this.getAttribute("data-value"));
+                    starItems.forEach(s => {
+                        const sVal = parseInt(s.getAttribute("data-value"));
+                        if (sVal <= val) {
+                            s.classList.remove("far");
+                            s.classList.add("fas");
+                        } else {
+                            s.classList.remove("fas");
+                            s.classList.add("far");
+                        }
+                    });
+                });
+                
+                star.addEventListener("mouseout", function() {
+                    const val = ratingInput ? parseInt(ratingInput.value) : 5;
+                    starItems.forEach(s => {
+                        const sVal = parseInt(s.getAttribute("data-value"));
+                        if (sVal <= val) {
+                            s.classList.remove("far");
+                            s.classList.add("fas");
+                        } else {
+                            s.classList.remove("fas");
+                            s.classList.add("far");
+                        }
+                    });
+                });
+            });
+        }
+    });
+</script>

@@ -26,8 +26,10 @@
                     <thead class="bg-light">
                         <tr>
                             <th class="ps-4">Sản phẩm</th>
+                            <th>Thương hiệu</th>
                             <th>Loại</th>
-                            <th>Giá (đ)</th>
+                            <th>Giá gốc (đ)</th>
+                            <th>Khuyến mãi (đ)</th>
                             <th>Tồn kho</th>
                             <th class="text-center pe-4">Hành động</th>
                         </tr>
@@ -57,10 +59,16 @@
                                     </div>
                                 </td>
                                 <td>
+                                    <span class="badge bg-secondary text-white">@(!string.IsNullOrEmpty(item.BrandId) ? item.BrandId : "-")</span>
+                                </td>
+                                <td>
                                     <span class="badge bg-info text-white rounded-pill">@(item.Category?.Name ?? "-")</span>
                                 </td>
-                                <td class="fw-bold text-primary">
+                                <td class="text-muted text-decoration-line-through">
                                     @item.Price.ToString("N0")đ
+                                </td>
+                                <td class="fw-bold text-danger">
+                                    @(item.DiscountPrice.HasValue ? $"{item.DiscountPrice.Value.ToString("N0")}đ" : "-")
                                 </td>
                                 <td>
                                     @if (item.StockQuantity <= 5)

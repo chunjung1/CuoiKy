@@ -2,21 +2,42 @@
 @{
     ViewData["Title"] = "Thống kê doanh thu";
     Layout = "_AdminLayout";
-    var maxRevenue = Model.RevenueByDays.Any() ? Model.RevenueByDays.Max(x => x.Revenue) : 0m;
 }
 
 <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold"><i class="fas fa-chart-line me-2"></i>Thống kê doanh thu</h2>
-        <form method="get" class="d-flex align-items-end gap-2">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <h2 class="fw-bold mb-0"><i class="fas fa-chart-line me-2"></i>Thống kê doanh thu</h2>
+        <form method="get" class="d-flex align-items-end gap-2 flex-wrap">
             <div>
-                <label class="form-label small text-muted mb-1">Từ ngày</label>
-                <input type="date" class="form-control" name="startDate" value="@Model.StartDate.ToString("yyyy-MM-dd")" />
+                <label class="form-label small text-muted mb-1">Thống kê theo</label>
+                <select name="filterType" id="filterTypeSelect" class="form-select">
+                    <option value="day" selected="@(Model.FilterType == "day")">Theo ngày</option>
+                    <option value="month" selected="@(Model.FilterType == "month")">Theo tháng</option>
+                    <option value="quarter" selected="@(Model.FilterType == "quarter")">Theo quý</option>
+                </select>
             </div>
-            <div>
-                <label class="form-label small text-muted mb-1">Đến ngày</label>
-                <input type="date" class="form-control" name="endDate" value="@Model.EndDate.ToString("yyyy-MM-dd")" />
+            
+            <div id="dayFilters" class="d-flex gap-2" style="display: @(Model.FilterType == "day" ? "flex" : "none") !important;">
+                <div>
+                    <label class="form-label small text-muted mb-1">Từ ngày</label>
+                    <input type="date" class="form-control" name="startDate" value="@Model.StartDate.ToString("yyyy-MM-dd")" />
+                </div>
+                <div>
+                    <label class="form-label small text-muted mb-1">Đến ngày</label>
+                    <input type="date" class="form-control" name="endDate" value="@Model.EndDate.ToString("yyyy-MM-dd")" />
+                </div>
             </div>
+            
+            <div id="yearFilter" style="display: @(Model.FilterType != "day" ? "block" : "none") !important;">
+                <label class="form-label small text-muted mb-1">Chọn năm</label>
+                <select name="year" class="form-select">
+                    @for (int y = DateTime.Today.Year - 2; y <= DateTime.Today.Year + 1; y++)
+                    {
+                        <option value="@y" selected="@(Model.SelectedYear == y)">Năm @y</option>
+                    }
+                </select>
+            </div>
+            
             <button type="submit" class="btn btn-primary"><i class="fas fa-filter me-1"></i>Lọc</button>
         </form>
     </div>
@@ -72,10 +93,10 @@
         <div class="col-12 col-lg-7">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white fw-bold py-3">
-                    Doanh thu theo ngày
+                    @(Model.FilterType == "day" ? "Doanh thu theo ngày" : Model.FilterType == "month" ? "Doanh thu theo tháng" : "Doanh thu theo quý")
                 </div>
                 <div class="card-body">
-                    @if (!Model.RevenueByDays.Any())
+                    @if (!Model.RevenueGroupedItems.Any())
                     {
                         <div class="text-center text-muted py-5">
                             <i class="fas fa-chart-area fa-3x mb-3"></i>
@@ -84,22 +105,23 @@
                     }
                     else
                     {
+                        var maxRevenue = Model.RevenueGroupedItems.Max(x => x.Revenue);
                         <div class="table-responsive">
                             <table class="table align-middle mb-0">
                                 <thead class="bg-light">
                                     <tr>
-                                        <th>Ngày</th>
+                                        <th>Thời gian</th>
                                         <th style="width: 45%;">Biểu đồ</th>
                                         <th class="text-end">Đơn</th>
                                         <th class="text-end">Doanh thu</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var row in Model.RevenueByDays)
+                                    @foreach (var row in Model.RevenueGroupedItems)
                                     {
                                         var percent = maxRevenue <= 0 ? 0 : (int)Math.Round((double)(row.Revenue / maxRevenue * 100));
                                         <tr>
-                                            <td class="fw-bold">@row.Date.ToString("dd/MM")</td>
+                                            <td class="fw-bold">@row.Label</td>
                                             <td>
                                                 <div class="progress" style="height: 10px;">
                                                     <div class="progress-bar bg-primary" role="progressbar" style="width: @percent%"></div>
@@ -162,3 +184,23 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const select = document.getElementById("filterTypeSelect");
+        const dayFilters = document.getElementById("dayFilters");
+        const yearFilter = document.getElementById("yearFilter");
+
+        if (select) {
+            select.addEventListener("change", function() {
+                if (this.value === "day") {
+                    dayFilters.setAttribute("style", "display: flex !important;");
+                    yearFilter.setAttribute("style", "display: none !important;");
+                } else {
+                    dayFilters.setAttribute("style", "display: none !important;");
+                    yearFilter.setAttribute("style", "display: block !important;");
+                }
+            });
+        }
+    });
+</script>

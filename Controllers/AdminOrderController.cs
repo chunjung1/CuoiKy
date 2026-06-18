@@ -46,9 +46,13 @@ public class AdminOrderController : Controller
         var order = await _dbContext.Orders.FindAsync(id);
         if (order == null) return Json(new { success = false, message = "Không tìm thấy đơn hàng" });
 
-        if (order.Status == OrderStatus.Pending)
+        if (order.PaymentStatus == PaymentStatus.Pending)
         {
-            order.Status = OrderStatus.Paid;
+            order.PaymentStatus = PaymentStatus.Paid;
+            if (order.Status == OrderStatus.Pending)
+            {
+                order.Status = OrderStatus.Paid;
+            }
             await _dbContext.SaveChangesAsync();
             return Json(new { success = true, message = "Xác nhận đã thu tiền thành công!" });
         }
@@ -58,18 +62,26 @@ public class AdminOrderController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateStatus(int id, OrderStatus status)
+    public async Task<IActionResult> UpdateStatus(int id, OrderStatus status, PaymentStatus paymentStatus)
     {
-        var order = await _dbContext.Orders.FindAsync(id);
+        var order = await _dbContext.Orders.Include(o => o.Items).FirstOrDefaultAsync(o => o.Id == id);
         if (order == null) return NotFound();
 
-        if (status == OrderStatus.Pending && order.Status != OrderStatus.Pending)
+        // If status changes to Canceled and it was not canceled before, restore stock
+        if (status == OrderStatus.Canceled && order.Status != OrderStatus.Canceled)
         {
-            TempData["ErrorMessage"] = "Không thể chuyển trạng thái từ trạng thái hiện tại về Chờ thanh toán.";
-            return RedirectToAction(nameof(Details), new { id = order.Id });
+            foreach (var item in order.Items)
+            {
+                var product = await _dbContext.Products.FindAsync(item.ProductId);
+                if (product != null)
+                {
+                    product.StockQuantity += item.Quantity;
+                }
+            }
         }
 
         order.Status = status;
+        order.PaymentStatus = paymentStatus;
         await _dbContext.SaveChangesAsync();
 
         TempData["SuccessMessage"] = "Cập nhật trạng thái đơn hàng thành công!";

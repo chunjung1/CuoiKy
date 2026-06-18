@@ -157,4 +157,41 @@ public class AccountController : Controller
     {
         return View();
     }
+
+    [HttpGet]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public IActionResult Profile()
+    {
+        var username = User.Identity?.Name;
+        var email = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+        var user = _dbContext.Users.FirstOrDefault(u => u.Username == username || u.Email == email);
+        if (user == null) return RedirectToAction("Login");
+        return View(user);
+    }
+
+    [HttpPost]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    [ValidateAntiForgeryToken]
+    public IActionResult Profile(string email, string? newPassword)
+    {
+        var username = User.Identity?.Name;
+        var currentUser = _dbContext.Users.FirstOrDefault(u => u.Username == username);
+        if (currentUser == null) return RedirectToAction("Login");
+
+        if (currentUser.Email != email && _dbContext.Users.Any(u => u.Email == email && u.Id != currentUser.Id))
+        {
+            TempData["ErrorMessage"] = "Email này đã được sử dụng bởi tài khoản khác.";
+            return View(currentUser);
+        }
+
+        currentUser.Email = email;
+        if (!string.IsNullOrEmpty(newPassword))
+        {
+            currentUser.Password = newPassword;
+        }
+
+        _dbContext.SaveChanges();
+        TempData["SuccessMessage"] = "Cập nhật thông tin cá nhân thành công!";
+        return View(currentUser);
+    }
 }

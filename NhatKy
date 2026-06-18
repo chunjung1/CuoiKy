@@ -1,0 +1,92 @@
+# NHẬT KÝ THAY ĐỔI & NÂNG CẤP DỰ ÁN (DATED: 16/06/2026)
+
+## 1. Đồng bộ hóa CSDL & Thay đổi kiểu Thương hiệu
+- **Nội dung thực hiện**:
+  - Đổi thuộc tính `BrandId` trong model `Product` thành kiểu `string?` để lưu trữ tên chữ trực tiếp (Apple, Oppo, Samsung...) thay vì mã số.
+  - Cấu hình fluent API ánh xạ thuộc tính này tới tên cột `BranchID` kiểu `nvarchar(max)` trong database.
+  - Tạo mới và chạy migration `ChangeBrandIdTypeAndColumnName` để đồng bộ CSDL.
+- **Tệp chỉnh sửa**:
+  - [Product.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Models/Product.cs)
+  - [ApplicationDbContext.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Data/ApplicationDbContext.cs)
+  - Các View sản phẩm Admin/Khách hàng: [Index.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Product/Index.cshtml), [Create.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Product/Create.cshtml), [Edit.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Product/Edit.cshtml), [Details.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Product/Details.cshtml).
+
+## 2. Phân tách Trạng thái Đơn hàng và Trạng thái Thanh toán
+- **Nội dung thực hiện**:
+  - Khai báo enum `PaymentStatus` (Pending, Paid, Failed) và tích hợp thuộc tính này vào lớp `Order`.
+  - Tạo và chạy migration `AddCouponAndPaymentStatus` (thêm cột `PaymentStatus` trong bảng `Orders` và tạo bảng `Coupons`).
+  - Cập nhật logic thống kê doanh thu (`AdminRevenueController`) chỉ tính dựa trên những đơn hàng có `PaymentStatus == PaymentStatus.Paid`.
+  - Điều chỉnh giao diện Admin và Khách hàng để hiển thị độc lập hai trạng thái này.
+- **Tệp chỉnh sửa**:
+  - [Order.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Models/Order.cs)
+  - [AdminOrderController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/AdminOrderController.cs)
+  - [AdminRevenueController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/AdminRevenueController.cs)
+  - Các View liên quan: [Index.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/AdminOrder/Index.cshtml), [Details.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/AdminOrder/Details.cshtml), [MyOrders.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Order/MyOrders.cshtml), [Details.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Order/Details.cshtml).
+
+## 3. GUI Quản lý Mã giảm giá (Coupon) dành cho Admin
+- **Nội dung thực hiện**:
+  - Khởi tạo Model `Coupon.cs` và khai báo `DbSet<Coupon>` trong DbContext.
+  - Xây dựng [AdminCouponController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/AdminCouponController.cs) thực hiện đầy đủ các chức năng CRUD cho Coupon.
+  - Thêm menu liên kết vào sidebar trong [_AdminLayout.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Shared/_AdminLayout.cshtml).
+- **Tệp tạo mới**:
+  - [Coupon.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Models/Coupon.cs)
+  - [AdminCouponController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/AdminCouponController.cs)
+  - Thư mục View [Views/AdminCoupon/](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/AdminCoupon/) chứa: `Index.cshtml`, `Create.cshtml`, `Edit.cshtml`.
+
+## 4. Áp dụng Mã giảm giá lúc Checkout
+- **Nội dung thực hiện**:
+  - Bổ sung API endpoint `/Cart/ApplyCoupon` để kiểm tra coupon hợp lệ thông qua AJAX.
+  - Cập nhật giao diện trang thanh toán [Checkout.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Cart/Checkout.cshtml) cho phép nhập coupon, tự động hiển thị dòng giảm giá và cập nhật tổng tiền thanh toán động.
+  - Sửa action `ProcessCheckout` để trừ tiền đơn hàng chính thức ở Server và tăng lượt sử dụng coupon (`UsedCount++`).
+- **Tệp chỉnh sửa**:
+  - [CartController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/CartController.cs)
+  - [Checkout.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Cart/Checkout.cshtml)
+
+## 5. Trang thông tin cá nhân của người dùng (Profile)
+- **Nội dung thực hiện**:
+  - Thêm hai action `Profile()` (GET và POST) vào [AccountController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/AccountController.cs) để hỗ trợ cập nhật Email/Mật khẩu.
+  - Thiết kế view trang cá nhân [Profile.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Account/Profile.cshtml).
+  - Tích hợp liên kết tới Trang cá nhân trên menu dropdown của thanh điều hướng chính.
+- **Tệp chỉnh sửa/Tạo mới**:
+  - [AccountController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/AccountController.cs)
+  - [Profile.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Account/Profile.cshtml) [NEW]
+  - [_Layout.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Shared/_Layout.cshtml)
+
+## 6. Tính năng Hủy & Mua lại Đơn Hàng
+- **Nội dung thực hiện**:
+  - Bổ sung thuộc tính `CancelReason` vào model `Order` và chạy Migration để cập nhật database.
+  - Xây dựng API POST `/Order/CancelOrder` để cho phép khách hàng hủy đơn hàng khi trạng thái là `Pending` hoặc `Paid` (chờ xử lý / đã xác nhận).
+  - Tự động cộng trả số lượng tồn kho sản phẩm khi khách hàng hoặc Admin thực hiện hủy đơn.
+  - Xây dựng API POST `/Cart/Reorder` cho phép thêm toàn bộ sản phẩm của đơn hàng cũ đã thành công (`Completed`) quay lại giỏ hàng và tự động chọn để chuyển hướng tới Checkout.
+- **Tệp chỉnh sửa/Tạo mới**:
+  - [Order.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Models/Order.cs)
+  - [OrderController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/OrderController.cs)
+  - [CartController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/CartController.cs)
+  - [AdminOrderController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/AdminOrderController.cs)
+  - Các View liên quan: [MyOrders.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Order/MyOrders.cshtml), [Details.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Order/Details.cshtml), [Details.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/AdminOrder/Details.cshtml).
+
+## 7. Tính năng Đánh giá Sản phẩm (Rating & Comments)
+- **Nội dung thực hiện**:
+  - Khởi tạo Model `ProductReview.cs` lưu thông tin sao (1-5) và bình luận của người dùng đối với sản phẩm.
+  - Đăng ký DbSet và thiết lập ánh xạ Fluent API cho bảng `ProductReviews` trong DbContext.
+  - Xây dựng [ProductReviewController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/ProductReviewController.cs) tiếp nhận đánh giá sản phẩm. Chặn đánh giá nếu chưa mua sản phẩm hoặc đã đánh giá trước đó.
+  - Cập nhật View chi tiết sản phẩm hiển thị tóm tắt điểm sao trung bình, danh sách các đánh giá cũ, và form gửi đánh giá sao trực quan.
+  - Hiển thị nút "Đánh giá" riêng lẻ bên cạnh từng sản phẩm trong các đơn hàng đã giao (`Completed`) để dẫn người dùng trực tiếp đến trang chi tiết sản phẩm đó.
+- **Tệp chỉnh sửa/Tạo mới**:
+  - [ProductReview.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Models/ProductReview.cs) [NEW]
+  - [ProductReviewController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/ProductReviewController.cs) [NEW]
+  - [ProductController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/ProductController.cs)
+  - Các View liên quan: [Details.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Product/Details.cshtml), [MyOrders.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Order/MyOrders.cshtml), [Details.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Order/Details.cshtml).
+
+## 8. Thống kê Doanh thu theo Tháng/Quý (Admin)
+- **Nội dung thực hiện**:
+  - Cập nhật ViewModel lưu trữ loại bộ lọc (`day`, `month`, `quarter`) và gộp doanh thu theo cấu trúc mới.
+  - Nâng cấp logic truy vấn trong `AdminRevenueController.cs` để tự động gộp dữ liệu theo 12 tháng hoặc theo 4 quý dựa trên năm được chọn.
+  - Thiết kế lại bộ lọc doanh thu Admin: Hỗ trợ dropdown chọn loại bộ lọc động (ẩn hiện vùng nhập ngày / chọn năm thông qua JS).
+- **Tệp chỉnh sửa**:
+  - [AdminRevenueViewModel.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/ViewModels/AdminRevenueViewModel.cs)
+  - [AdminRevenueController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/AdminRevenueController.cs)
+  - [Index.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/AdminRevenue/Index.cshtml)
+
+---
+**Tình trạng biên dịch**: Thành công 100% không có lỗi/cảnh báo. Máy chủ đang hoạt động ổn định.
+

@@ -17,6 +17,13 @@ public enum PaymentMethod
     BankTransfer
 }
 
+public enum PaymentStatus
+{
+    Pending,
+    Paid,
+    Failed
+}
+
 public class Order
 {
     public int Id { get; set; }
@@ -43,9 +50,13 @@ public class Order
 
     public OrderStatus Status { get; set; } = OrderStatus.Pending;
 
+    public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public decimal TotalAmount { get; set; }
+
+    public string? CancelReason { get; set; }
 
     public List<OrderItem> Items { get; set; } = new List<OrderItem>();
 }
