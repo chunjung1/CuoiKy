@@ -115,6 +115,50 @@
   - [Checkout.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Cart/Checkout.cshtml)
   - [CartController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/CartController.cs)
 
+
+## 11. Chức năng Chăm sóc khách hàng trực tuyến thời gian thực (Live Chat)
+- **Nội dung thực hiện**:
+  - Tạo model `ChatMessage` và cập nhật database để lưu trữ lịch sử hội thoại.
+  - Cập nhật claims đăng nhập để lưu trữ `NameIdentifier` (User ID), phục vụ cho việc định danh người dùng trong chat.
+  - Xây dựng Hub SignalR `ChatHub` để xử lý truyền nhận tin nhắn trực tiếp giữa Khách hàng và Admin.
+  - Thiết kế widget bong bóng chat nổi ở góc dưới bên phải phía Khách hàng (`_Layout.cshtml`). Tự động tải lịch sử, thông báo số tin nhắn chưa đọc và phát âm thanh báo.
+  - Thiết kế trang Dashboard Chat dành cho Admin (`Views/AdminChat/Index.cshtml`) hiển thị danh sách hội thoại của khách hàng, số lượng tin nhắn chưa đọc và phản hồi trực tiếp.
+- **Tệp chỉnh sửa/Tạo mới**:
+  - [ChatMessage.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Models/ChatMessage.cs) [NEW]
+  - [ChatHub.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Hubs/ChatHub.cs) [NEW]
+  - [ChatController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/ChatController.cs) [NEW]
+  - [AdminChatController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/AdminChatController.cs) [NEW]
+  - [Index.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/AdminChat/Index.cshtml) [NEW]
+  - [ApplicationDbContext.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Data/ApplicationDbContext.cs)
+  - [AccountController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/AccountController.cs)
+  - [_Layout.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Shared/_Layout.cshtml)
+  - [_AdminLayout.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Shared/_AdminLayout.cshtml)
+  - [Program.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Program.cs)
+
+## 12. Tích hợp bên giao nhận thứ 3 & Xác nhận đơn hàng thành công
+- **Nội dung thực hiện**:
+  - Thêm thuộc tính `ShippingPartner` và `TrackingNumber` vào model `Order` và cập nhật database.
+  - Nâng cấp `CheckoutFacade` hỗ trợ gọi hàng loạt `IEnumerable<IOrderObserver>` thay vì một observer đơn lẻ.
+  - Tạo cổng kết nối `IShippingServiceAdapter` và các Adapter giao nhận mô phỏng (`ShopeeExpressAdapter`, `GiaoHangNhanhAdapter`).
+  - Xây dựng `ShippingObserver` lắng nghe sự kiện: Tự động gửi đơn hàng sang bên giao nhận ngay khi tạo đơn (đơn COD) hoặc khi thanh toán trực tuyến thành công (đơn PayOS).
+  - Tích hợp lựa chọn đơn vị vận chuyển tại trang Checkout và hiển thị mã vận đơn trên trang theo dõi đơn hàng của khách hàng.
+  - Thêm nút "Đã nhận được hàng" cho phép khách hàng tự xác nhận hoàn thành đơn hàng, chuyển trạng thái đơn sang `Completed` và thanh toán thành công `Paid` (cho đơn COD).
+- **Tệp chỉnh sửa/Tạo mới**:
+  - [IShippingServiceAdapter.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Patterns/Adapter/IShippingServiceAdapter.cs) [NEW]
+  - [ShopeeExpressAdapter.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Patterns/Adapter/ShopeeExpressAdapter.cs) [NEW]
+  - [GiaoHangNhanhAdapter.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Patterns/Adapter/GiaoHangNhanhAdapter.cs) [NEW]
+  - [ShippingObserver.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Patterns/Observer/ShippingObserver.cs) [NEW]
+  - [Order.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Models/Order.cs)
+  - [CheckoutFacade.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Patterns/Facade/CheckoutFacade.cs)
+  - [IOrderObserver.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Patterns/Observer/IOrderObserver.cs)
+  - [InventoryObserver.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Patterns/Observer/InventoryObserver.cs)
+  - [CartController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/CartController.cs)
+  - [OrderController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/OrderController.cs)
+  - [Checkout.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Cart/Checkout.cshtml)
+  - [MyOrders.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Order/MyOrders.cshtml)
+  - [Details.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Order/Details.cshtml)
+  - [Program.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Program.cs)
+
 ---
 **Tình trạng biên dịch**: Thành công 100% không có lỗi/cảnh báo. Máy chủ đang hoạt động ổn định.
 
