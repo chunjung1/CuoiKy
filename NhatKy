@@ -87,6 +87,34 @@
   - [AdminRevenueController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/AdminRevenueController.cs)
   - [Index.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/AdminRevenue/Index.cshtml)
 
+## 9. Truy vết Tìm kiếm của Khách hàng & Gợi ý sản phẩm (Upsell)
+- **Nội dung thực hiện**:
+  - Tạo mới thực thể `SearchHistory` để ghi nhận từ khóa tìm kiếm kèm theo `UserId` (thành viên) hoặc `SessionId` (khách vãng lai).
+  - Tích hợp logic lưu vết trong `ProductController` khi có truy vấn tìm kiếm `q`.
+  - Triển khai thuật toán gợi ý sản phẩm tại trang chủ trong `HomeController`: Phân tích các từ khóa tìm kiếm gần đây để lấy danh mục/thương hiệu liên quan, ưu tiên các sản phẩm đang có giá khuyến mãi hoặc có giá trị cao hơn trung bình (upsell), tự động hiển thị sản phẩm khuyến mãi mặc định nếu chưa có lịch sử.
+  - Thiết kế thêm phân vùng *"Gợi ý dành riêng cho bạn"* tại trang chủ (`Home/Index`) với hiệu ứng pulsing badge và card hover mượt mà.
+- **Tệp chỉnh sửa/Tạo mới**:
+  - [SearchHistory.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Models/SearchHistory.cs) [NEW]
+  - [ApplicationDbContext.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Data/ApplicationDbContext.cs)
+  - [HomeIndexViewModel.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/ViewModels/HomeIndexViewModel.cs)
+  - [ProductController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/ProductController.cs)
+  - [HomeController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/HomeController.cs)
+  - [Index.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Home/Index.cshtml)
+
+## 10. Tích hợp cổng thanh toán trực tuyến PayOS (VietQR)
+- **Nội dung thực hiện**:
+  - Cài đặt thư viện NuGet `payOS` và thiết lập cấu hình kết nối (`ClientId`, `ApiKey`, `ChecksumKey`) trong `appsettings.json`.
+  - Đăng ký `PayOSClient` Singleton trong `Program.cs` để gọi API.
+  - Mở rộng hình thức thanh toán `PaymentMethod` trong model `Order` và tích hợp lựa chọn thanh toán PayOS trên trang Checkout.
+  - Xây dựng quy trình thanh toán trong `CartController`: Tạo link thanh toán động qua PayOS và chuyển hướng người dùng, xử lý callback quay về (`PayOSReturn`) để xác nhận giao dịch và webhook ngầm (`PayOSWebhook`) sử dụng chữ ký HMAC tự động cập nhật đơn hàng thành `Paid`.
+- **Tệp chỉnh sửa/Tạo mới**:
+  - [CuoiKy.csproj](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/CuoiKy.csproj)
+  - [appsettings.json](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/appsettings.json)
+  - [Program.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Program.cs)
+  - [Order.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Models/Order.cs)
+  - [Checkout.cshtml](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Views/Cart/Checkout.cshtml)
+  - [CartController.cs](file:///c:/Document/Thương mại điện tử/New folder/CuoiKy/Controllers/CartController.cs)
+
 ---
 **Tình trạng biên dịch**: Thành công 100% không có lỗi/cảnh báo. Máy chủ đang hoạt động ổn định.
 

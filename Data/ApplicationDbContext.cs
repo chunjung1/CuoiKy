@@ -17,6 +17,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Coupon> Coupons { get; set; }
     public DbSet<ProductReview> ProductReviews { get; set; }
+    public DbSet<SearchHistory> SearchHistories { get; set; }
+    public DbSet<ChatMessage> ChatMessages { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -29,6 +31,8 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<User>().ToTable("Users");
         modelBuilder.Entity<Coupon>().ToTable("Coupons");
         modelBuilder.Entity<ProductReview>().ToTable("ProductReviews");
+        modelBuilder.Entity<SearchHistory>().ToTable("SearchHistories");
+        modelBuilder.Entity<ChatMessage>().ToTable("ChatMessages");
 
         // Fix decimal precision warnings
         modelBuilder.Entity<Product>()
@@ -50,5 +54,17 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<OrderItem>()
             .Property(oi => oi.UnitPrice)
             .HasColumnType("decimal(18,2)");
+
+        modelBuilder.Entity<ChatMessage>()
+            .HasOne(m => m.Sender)
+            .WithMany()
+            .HasForeignKey(m => m.SenderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ChatMessage>()
+            .HasOne(m => m.Receiver)
+            .WithMany()
+            .HasForeignKey(m => m.ReceiverId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

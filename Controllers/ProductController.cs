@@ -110,6 +110,54 @@ public class ProductController : Controller
         {
             q = q.Trim();
             query = query.Where(p => EF.Functions.Like(p.Name, $"%{q}%"));
+
+            // Trace/Track search action
+            try
+            {
+                // Ensure session is started to obtain a stable Session ID
+                if (string.IsNullOrEmpty(HttpContext.Session.GetString("SessionStarted")))
+                {
+                    HttpContext.Session.SetString("SessionStarted", "true");
+                }
+                string sessionId = HttpContext.Session.Id;
+
+                int? userId = null;
+                if (User.Identity?.IsAuthenticated == true)
+                {
+                    var username = User.Identity.Name;
+                    var email = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value;
+                    var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Username == username || u.Email == email);
+                    if (user != null)
+                    {
+                        userId = user.Id;
+                    }
+                }
+
+                // Check if the same query was already logged in the last 30 seconds for this user/session to prevent redundant logs on reload
+                var recentCutoff = DateTime.UtcNow.AddSeconds(-30);
+                bool alreadyLogged = await _dbContext.SearchHistories.AnyAsync(s =>
+                    (userId.HasValue ? s.UserId == userId.Value : s.SessionId == sessionId) &&
+                    s.QueryText == q &&
+                    s.SearchedAt >= recentCutoff);
+
+                if (!alreadyLogged)
+                {
+                    var searchHistory = new SearchHistory
+                    {
+                        UserId = userId,
+                        SessionId = sessionId,
+                        QueryText = q,
+                        SearchedAt = DateTime.UtcNow
+                    };
+                    _dbContext.SearchHistories.Add(searchHistory);
+                    await _dbContext.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log exception internally but don't disrupt search results
+                Console.WriteLine($"Error tracking search behavior: {ex.Message}");
+            }
         }
         var products = await query.ToListAsync();
         ViewBag.CurrentCategory = category;

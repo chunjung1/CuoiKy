@@ -1,0 +1,415 @@
+@{
+    ViewData["Title"] = "Chăm sóc Khách hàng";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid py-4" style="height: calc(100vh - 120px);">
+    <div class="row h-100 g-0 shadow-lg rounded-3 overflow-hidden bg-white border">
+        <!-- Cột trái: Danh sách cuộc trò chuyện -->
+        <div class="col-md-4 col-lg-3 d-flex flex-column border-end bg-light" style="height: 100%;">
+            <!-- Search bar -->
+            <div class="p-3 border-bottom bg-white">
+                <h5 class="fw-bold mb-3 text-primary"><i class="fa-solid fa-comments me-2"></i>Hỗ trợ trực tuyến</h5>
+                <div class="input-group" style="border-radius: 20px; overflow: hidden; border: 1px solid #dee2e6;">
+                    <span class="input-group-text border-0 bg-transparent text-muted"><i class="fa-solid fa-search"></i></span>
+                    <input type="text" id="searchCustomer" class="form-control border-0 shadow-none bg-transparent ps-0" placeholder="Tìm khách hàng..." style="font-size: 14px;" />
+                </div>
+            </div>
+            <!-- Conversation list -->
+            <div id="conversationList" class="flex-grow-1 overflow-y-auto p-2" style="height: 0;">
+                <!-- Dữ liệu nạp động từ JS -->
+                <div class="d-flex justify-content-center align-items-center h-100 text-muted">
+                    <div class="spinner-border spinner-border-sm me-2" role="status"></div> Tải hội thoại...
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột phải: Khung chat chi tiết -->
+        <div class="col-md-8 col-lg-9 d-flex flex-column bg-white" style="height: 100%;">
+            <!-- Khung chat chưa chọn cuộc hội thoại -->
+            <div id="noChatSelected" class="d-flex flex-column align-items-center justify-content-center h-100 text-center px-4" style="background-color: #fafbfc;">
+                <div class="mb-4 text-primary" style="width: 100px; height: 100px; border-radius: 50%; background-color: #e6f3ff; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-headset" style="font-size: 45px;"></i>
+                </div>
+                <h4 class="fw-bold mb-2">Trung tâm Hỗ trợ Khách hàng</h4>
+                <p class="text-muted" style="max-width: 450px; font-size: 14px;">Chọn một khách hàng từ danh sách bên trái để xem lịch sử trò chuyện và bắt đầu hỗ trợ giải đáp thắc mắc thời gian thực.</p>
+            </div>
+
+            <!-- Khung chat đã chọn cuộc hội thoại -->
+            <div id="chatActiveContainer" class="d-flex flex-column h-100" style="display: none !important;">
+                <!-- Chat Header -->
+                <div class="d-flex align-items-center justify-content-between p-3 border-bottom bg-white shadow-sm">
+                    <div class="d-flex align-items-center">
+                        <div class="position-relative me-3">
+                            <div id="activeCustomerAvatar" class="avatar-circle">U</div>
+                            <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle" style="width: 12px; height: 12px;"></span>
+                        </div>
+                        <div>
+                            <h6 id="activeCustomerName" class="mb-0 fw-bold">Tên khách hàng</h6>
+                            <small id="activeCustomerEmail" class="text-muted" style="font-size: 12px;">email@example.com</small>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="badge bg-light text-dark border"><i class="fa-solid fa-circle text-success me-1" style="font-size: 8px;"></i> Trực tuyến</span>
+                    </div>
+                </div>
+
+                <!-- Chat Body (Messages) -->
+                <div id="adminMessagesList" class="flex-grow-1 overflow-y-auto p-4 d-flex flex-column" style="background-color: #f8f9fa; height: 0;">
+                    <!-- Tin nhắn -->
+                </div>
+
+                <!-- Chat Footer (Input) -->
+                <div class="p-3 border-top bg-white">
+                    <div class="input-group" style="background: #f1f3f4; border-radius: 30px; padding: 5px 8px; border: 1px solid #e0e0e0;">
+                        <input type="text" id="adminInputMessage" class="form-control border-0 shadow-none bg-transparent ps-3" placeholder="Nhập câu trả lời..." style="font-size: 14px;" autocomplete="off" />
+                        <button class="btn btn-primary d-flex align-items-center justify-content-center" id="adminSendBtn" style="width: 40px; height: 40px; border-radius: 50%; padding: 0; background: linear-gradient(135deg, #008BFF 0%, #0056b3 100%); border: none;">
+                            <i class="fa-solid fa-paper-plane text-white" style="font-size: 14px;"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background-color: #008BFF;
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-transform: uppercase;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .chat-item-btn {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 12px;
+        border: none;
+        background: transparent;
+        border-radius: 12px;
+        text-align: left;
+        transition: all 0.2s ease;
+        margin-bottom: 4px;
+        color: inherit;
+        text-decoration: none !important;
+    }
+    
+    .chat-item-btn:hover {
+        background-color: rgba(0, 139, 255, 0.05);
+    }
+    
+    .chat-item-btn.active {
+        background-color: #e6f3ff;
+    }
+    
+    .chat-item-name {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 2px;
+        color: #212529;
+    }
+    
+    .chat-item-snippet {
+        font-size: 12.5px;
+        color: #6c757d;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 180px;
+    }
+    
+    .chat-item-time {
+        font-size: 11px;
+        color: #adb5bd;
+    }
+    
+    /* Tin nhắn chat */
+    .admin-chat-msg {
+        max-width: 70%;
+        margin-bottom: 15px;
+        padding: 12px 16px;
+        border-radius: 16px;
+        font-size: 14px;
+        line-height: 1.4;
+        word-break: break-word;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    
+    .admin-chat-msg.admin-reply {
+        background: linear-gradient(135deg, #008BFF 0%, #0056b3 100%);
+        color: white;
+        align-self: flex-end;
+        border-bottom-right-radius: 2px;
+    }
+    
+    .admin-chat-msg.customer-send {
+        background-color: white;
+        color: #212529;
+        align-self: flex-start;
+        border-bottom-left-radius: 2px;
+        border: 1px solid #e9ecef;
+    }
+    
+    .admin-chat-msg-time {
+        font-size: 10px;
+        opacity: 0.65;
+        margin-top: 6px;
+        text-align: right;
+    }
+    
+    .admin-chat-msg.customer-send .admin-chat-msg-time {
+        color: #74808c;
+    }
+    
+    .admin-chat-msg.admin-reply .admin-chat-msg-time {
+        color: #e6f3ff;
+    }
+</style>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const conversationList = document.getElementById("conversationList");
+            const noChatSelected = document.getElementById("noChatSelected");
+            const chatActiveContainer = document.getElementById("chatActiveContainer");
+            const adminMessagesList = document.getElementById("adminMessagesList");
+            const adminInputMessage = document.getElementById("adminInputMessage");
+            const adminSendBtn = document.getElementById("adminSendBtn");
+            const searchCustomerInput = document.getElementById("searchCustomer");
+
+            // Element header chat active
+            const activeCustomerAvatar = document.getElementById("activeCustomerAvatar");
+            const activeCustomerName = document.getElementById("activeCustomerName");
+            const activeCustomerEmail = document.getElementById("activeCustomerEmail");
+
+            let activeCustomerId = null;
+            let conversationsData = [];
+            let connection = null;
+
+            function playNotificationSound() {
+                try {
+                    const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2357/2357-84.wav");
+                    audio.volume = 0.5;
+                    audio.play();
+                } catch (e) {
+                    console.log("Audio play blocked by browser policy.");
+                }
+            }
+
+            function loadConversations(selectCustomerId = null) {
+                fetch("/AdminChat/GetConversations")
+                    .then(res => res.json())
+                    .then(data => {
+                        conversationsData = data;
+                        renderConversations(data, selectCustomerId);
+                    })
+                    .catch(err => console.error("Error fetching conversations:", err));
+            }
+
+            function formatTime(timestampStr) {
+                try {
+                    const date = new Date(timestampStr);
+                    const now = new Date();
+                    
+                    // Nếu cùng ngày, hiển thị Giờ:Phút
+                    if (date.toDateString() === now.toDateString()) {
+                        const hours = String(date.getHours()).padStart(2, '0');
+                        const minutes = String(date.getMinutes()).padStart(2, '0');
+                        return `${hours}:${minutes}`;
+                    }
+                    // Nếu khác ngày, hiển thị Ngày/Tháng
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    return `${day}/${month}`;
+                } catch {
+                    return "";
+                }
+            }
+
+            function renderConversations(list, selectCustomerId = null) {
+                if (!list || list.length === 0) {
+                    conversationList.innerHTML = `
+                        <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted text-center p-3">
+                            <i class="fa-solid fa-comment-slash mb-2" style="font-size: 24px;"></i>
+                            <div style="font-size: 13px;">Chưa có cuộc hội thoại nào.</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                conversationList.innerHTML = "";
+                list.forEach(c => {
+                    const isActive = c.customerId === activeCustomerId || c.customerId === selectCustomerId;
+                    const initial = c.customerName.charAt(0).toUpperCase();
+                    const formattedTimeStr = formatTime(c.lastMessageTime);
+
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = `chat-item-btn ${isActive ? 'active' : ''}`;
+                    btn.dataset.id = c.customerId;
+                    btn.innerHTML = `
+                        <div class="avatar-circle me-3" style="width: 40px; height: 40px; font-size: 16px; min-width: 40px;">${initial}</div>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="chat-item-name text-truncate" style="max-width: 140px;">${c.customerName}</div>
+                                <div class="chat-item-time">${formattedTimeStr}</div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                <div class="chat-item-snippet text-truncate">${c.lastMessage}</div>
+                                ${c.unreadCount > 0 ? `<span class="badge bg-danger rounded-circle p-1 ms-2" style="font-size: 9px; min-width: 18px;">${c.unreadCount}</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+
+                    btn.addEventListener("click", function () {
+                        selectCustomer(c.customerId, c.customerName, c.customerEmail);
+                    });
+
+                    conversationList.appendChild(btn);
+                });
+            }
+
+            function selectCustomer(customerId, name, email) {
+                activeCustomerId = customerId;
+                
+                // Cập nhật class active trong danh sách cuộc trò chuyện
+                document.querySelectorAll(".chat-item-btn").forEach(btn => {
+                    if (parseInt(btn.dataset.id) === customerId) {
+                        btn.classList.add("active");
+                        // Xóa badge unread ngay lập tức ở giao diện
+                        const badge = btn.querySelector(".badge");
+                        if (badge) badge.remove();
+                    } else {
+                        btn.classList.remove("active");
+                    }
+                });
+
+                // Cập nhật header
+                activeCustomerAvatar.textContent = name.charAt(0).toUpperCase();
+                activeCustomerName.textContent = name;
+                activeCustomerEmail.textContent = email;
+
+                // Hiện khung chat
+                noChatSelected.style.setProperty("display", "none", "important");
+                chatActiveContainer.removeAttribute("style");
+
+                // Nạp lịch sử
+                loadChatHistory(customerId);
+            }
+
+            function loadChatHistory(customerId) {
+                fetch(`/AdminChat/GetHistory?customerId=${customerId}`)
+                    .then(res => res.json())
+                    .then(messages => {
+                        adminMessagesList.innerHTML = "";
+                        messages.forEach(msg => {
+                            appendMessage(msg.content, msg.isOwnMessage, msg.timestamp);
+                        });
+                        scrollToBottom();
+                    })
+                    .catch(err => console.error("Error loading chat history:", err));
+            }
+
+            function appendMessage(content, isOwn, timestamp) {
+                const msgDiv = document.createElement("div");
+                msgDiv.className = `admin-chat-msg ${isOwn ? 'admin-reply' : 'customer-send'}`;
+
+                const textSpan = document.createElement("div");
+                textSpan.textContent = content;
+                msgDiv.appendChild(textSpan);
+
+                const timeDiv = document.createElement("div");
+                timeDiv.className = "admin-chat-msg-time";
+                timeDiv.textContent = formatTime(timestamp);
+                msgDiv.appendChild(timeDiv);
+
+                adminMessagesList.appendChild(msgDiv);
+                scrollToBottom();
+            }
+
+            function scrollToBottom() {
+                adminMessagesList.scrollTop = adminMessagesList.scrollHeight;
+            }
+
+            function sendMessage() {
+                const content = adminInputMessage.value.trim();
+                if (!content || activeCustomerId === null) return;
+
+                if (connection && connection.state === signalR.HubConnectionState.Connected) {
+                    connection.invoke("SendMessageToCustomer", activeCustomerId, content)
+                        .then(() => {
+                            adminInputMessage.value = "";
+                            adminInputMessage.focus();
+                        })
+                        .catch(err => console.error("Error sending message via SignalR:", err));
+                }
+            }
+
+            adminSendBtn.addEventListener("click", sendMessage);
+            adminInputMessage.addEventListener("keypress", function (e) {
+                if (e.key === "Enter") {
+                    sendMessage();
+                }
+            });
+
+            // Lọc danh sách khách hàng khi tìm kiếm
+            searchCustomerInput.addEventListener("input", function () {
+                const query = searchCustomerInput.value.toLowerCase().trim();
+                const filtered = conversationsData.filter(c => 
+                    c.customerName.toLowerCase().includes(query) || 
+                    c.customerEmail.toLowerCase().includes(query)
+                );
+                renderConversations(filtered);
+            });
+
+            // Kết nối SignalR
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl("/chatHub")
+                .withAutomaticReconnect()
+                .build();
+
+            // Nhận tin nhắn mới từ khách hàng
+            connection.on("ReceiveMessage", function (senderId, senderName, content, timestamp, id) {
+                // Nếu tin nhắn từ khách hàng và đang chat với chính khách hàng đó
+                if (senderId === activeCustomerId) {
+                    appendMessage(content, false, timestamp);
+                    // Đánh dấu đã đọc ngầm trên server
+                    fetch(`/AdminChat/GetHistory?customerId=${senderId}`).catch(() => {});
+                    playNotificationSound();
+                } else {
+                    // Nếu là khách hàng khác nhắn, phát âm thông báo và nạp lại danh sách
+                    playNotificationSound();
+                }
+                
+                // Tải lại danh sách bên trái để cập nhật tin nhắn cuối cùng và badge chưa đọc
+                loadConversations();
+            });
+
+            // Nhận tin nhắn phản hồi của chính mình hoặc admin khác gửi cho khách hàng này
+            connection.on("ReceiveMessageFromAdmin", function (customerId, adminId, adminName, content, timestamp, id) {
+                if (customerId === activeCustomerId) {
+                    appendMessage(content, true, timestamp);
+                }
+                loadConversations();
+            });
+
+            connection.start()
+                .then(() => {
+                    console.log("Admin connected to ChatHub successfully.");
+                    loadConversations();
+                })
+                .catch(err => console.error("Error starting SignalR:", err));
+        });
+    </script>
+}

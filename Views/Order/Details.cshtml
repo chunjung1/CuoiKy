@@ -140,12 +140,37 @@
                 </div>
             }
 
-            <div class="card border-0 shadow-sm">
+            @if (Model.Status == OrderStatus.Shipping)
+            {
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white fw-bold py-3 text-success">Xác nhận giao hàng</div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">Nếu bạn đã nhận được đầy đủ các sản phẩm của đơn hàng này, vui lòng bấm nút bên dưới để xác nhận hoàn thành đơn hàng.</p>
+                        <form asp-action="ConfirmReceived" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <button type="submit" class="btn btn-success w-100 shadow-sm" onclick="return confirm('Bạn xác nhận đã nhận được đơn hàng này?')">
+                                <i class="fas fa-check me-1"></i>Đã nhận được hàng
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+
+            <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white fw-bold py-3">Thông tin giao hàng</div>
                 <div class="card-body">
                     <div class="mb-2"><strong>Người nhận:</strong> @Model.CustomerName</div>
                     <div class="mb-2"><strong>SĐT:</strong> @Model.PhoneNumber</div>
-                    <div class="mb-0"><strong>Địa chỉ:</strong> @Model.ShippingAddress</div>
+                    <div class="mb-2"><strong>Địa chỉ:</strong> @Model.ShippingAddress</div>
+                    @if (!string.IsNullOrEmpty(Model.ShippingPartner))
+                    {
+                        <div class="mb-2"><strong>Đơn vị vận chuyển:</strong> @Model.ShippingPartner</div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.TrackingNumber))
+                    {
+                        <div class="mb-0"><strong>Mã vận đơn:</strong> <span class="badge bg-secondary text-white">@Model.TrackingNumber</span></div>
+                    }
                 </div>
             </div>
         </div>

@@ -14,7 +14,8 @@ public enum OrderStatus
 public enum PaymentMethod
 {
     Cash,
-    BankTransfer
+    BankTransfer,
+    PayOS
 }
 
 public enum PaymentStatus
@@ -57,6 +58,10 @@ public class Order
     public decimal TotalAmount { get; set; }
 
     public string? CancelReason { get; set; }
+
+    public string? ShippingPartner { get; set; }
+
+    public string? TrackingNumber { get; set; }
 
     public List<OrderItem> Items { get; set; } = new List<OrderItem>();
 }

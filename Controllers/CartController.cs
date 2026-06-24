@@ -6,6 +6,9 @@ using CuoiKy.ViewModels;
 using CuoiKy.Extensions;
 using CuoiKy.Patterns;
 using System.Security.Claims;
+using PayOS;
+using PayOS.Models.V2.PaymentRequests;
+using PayOS.Models.Webhooks;
 
 namespace CuoiKy.Controllers
 {
@@ -14,12 +17,16 @@ namespace CuoiKy.Controllers
         private readonly ApplicationDbContext _dbContext;
         private readonly CheckoutFacade _checkoutFacade;
         private readonly IQrCodeGenerator _qrCodeGenerator;
+        private readonly PayOSClient _payOS;
+        private readonly IEnumerable<IOrderObserver> _observers;
 
-        public CartController(ApplicationDbContext dbContext, CheckoutFacade checkoutFacade, IQrCodeGenerator qrCodeGenerator)
+        public CartController(ApplicationDbContext dbContext, CheckoutFacade checkoutFacade, IQrCodeGenerator qrCodeGenerator, PayOSClient payOS, IEnumerable<IOrderObserver> observers)
         {
             _dbContext = dbContext;
             _checkoutFacade = checkoutFacade;
             _qrCodeGenerator = qrCodeGenerator;
+            _payOS = payOS;
+            _observers = observers;
         }
 
         private bool IsAdminUser()
@@ -229,7 +236,7 @@ namespace CuoiKy.Controllers
         }
 
         [HttpPost]
-        public IActionResult ProcessCheckout(string customerName, string phoneNumber, string shippingAddress, PaymentMethod paymentMethod, string? couponCode, bool giftWrap = false, bool expressShipping = false)
+        public async Task<IActionResult> ProcessCheckout(string customerName, string phoneNumber, string shippingAddress, PaymentMethod paymentMethod, string? couponCode, string shippingPartner, bool giftWrap = false, bool expressShipping = false)
         {
             if (IsAdminUser())
             {
@@ -289,6 +296,7 @@ namespace CuoiKy.Controllers
                 PhoneNumber = phoneNumber,
                 ShippingAddress = shippingAddress,
                 PaymentMethod = paymentMethod,
+                ShippingPartner = shippingPartner,
                 TotalAmount = baseTotal * (1 - discountPercent / 100),
                 Status = OrderStatus.Pending,
                 PaymentStatus = PaymentStatus.Pending,
@@ -315,7 +323,47 @@ namespace CuoiKy.Controllers
             {
                 _checkoutFacade.PlaceOrder(order);
 
-                // Xóa các sản phẩm đã mua khỏi giỏ hàng
+                // Nếu chọn PayOS, tạo link thanh toán và redirect khách
+                if (paymentMethod == PaymentMethod.PayOS)
+                {
+                    var items = new List<PaymentLinkItem>();
+                    foreach (var item in order.Items)
+                    {
+                        var product = await _dbContext.Products.FindAsync(item.ProductId);
+                        string prodName = product != null ? product.Name : "San pham";
+                        items.Add(new PaymentLinkItem
+                        {
+                            Name = prodName,
+                            Quantity = item.Quantity,
+                            Price = (long)item.UnitPrice
+                        });
+                    }
+
+                    string domain = $"{Request.Scheme}://{Request.Host}";
+                    string returnUrl = $"{domain}/Cart/PayOSReturn?orderId={order.Id}";
+                    string cancelUrl = $"{domain}/Cart/PayOSReturn?orderId={order.Id}&cancel=true";
+                    string desc = $"Thanh toan #{order.Id}";
+
+                    var paymentRequest = new CreatePaymentLinkRequest
+                    {
+                        OrderCode = order.Id,
+                        Amount = (long)order.TotalAmount,
+                        Description = desc,
+                        Items = items,
+                        CancelUrl = cancelUrl,
+                        ReturnUrl = returnUrl
+                    };
+
+                    var paymentResult = await _payOS.PaymentRequests.CreateAsync(paymentRequest);
+
+                    // Xóa các sản phẩm đã mua khỏi giỏ hàng
+                    cart.Items.RemoveAll(i => i.IsSelected);
+                    SaveCart(cart);
+
+                    return Redirect(paymentResult.CheckoutUrl);
+                }
+
+                // Xóa các sản phẩm đã mua khỏi giỏ hàng đối với COD/Chuyển khoản thủ công
                 cart.Items.RemoveAll(i => i.IsSelected);
                 SaveCart(cart);
 
@@ -325,6 +373,75 @@ namespace CuoiKy.Controllers
             {
                 TempData["ErrorMessage"] = ex.Message;
                 return RedirectToAction(nameof(Checkout));
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> PayOSReturn(int orderId, string? status, string? code, bool cancel)
+        {
+            var order = await _dbContext.Orders.Include(o => o.Items).FirstOrDefaultAsync(o => o.Id == orderId);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            if (cancel || code != "00" || status != "PAID")
+            {
+                order.PaymentStatus = PaymentStatus.Failed;
+                _dbContext.Orders.Update(order);
+                await _dbContext.SaveChangesAsync();
+
+                TempData["ErrorMessage"] = "Thanh toán qua PayOS đã bị hủy hoặc không thành công.";
+                return RedirectToAction("Details", "Order", new { id = order.Id });
+            }
+
+            order.PaymentStatus = PaymentStatus.Paid;
+            order.Status = OrderStatus.Paid;
+            _dbContext.Orders.Update(order);
+            await _dbContext.SaveChangesAsync();
+
+            // Kích hoạt các observers khi thanh toán thành công
+            foreach (var observer in _observers)
+            {
+                observer.OnOrderPaid(order);
+            }
+
+            TempData["SuccessMessage"] = "Thanh toán qua PayOS thành công!";
+            return RedirectToAction(nameof(OrderSuccess), new { id = order.Id });
+        }
+
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> PayOSWebhook([FromBody] Webhook body)
+        {
+            try
+            {
+                var verifiedData = await _payOS.Webhooks.VerifyAsync(body);
+
+                int orderId = (int)verifiedData.OrderCode;
+                var order = await _dbContext.Orders.FirstOrDefaultAsync(o => o.Id == orderId);
+                if (order != null)
+                {
+                    if (order.PaymentStatus != PaymentStatus.Paid)
+                    {
+                        order.PaymentStatus = PaymentStatus.Paid;
+                        order.Status = OrderStatus.Paid;
+                        _dbContext.Orders.Update(order);
+                        await _dbContext.SaveChangesAsync();
+
+                        // Kích hoạt các observers khi nhận webhook thanh toán thành công
+                        foreach (var observer in _observers)
+                        {
+                            observer.OnOrderPaid(order);
+                        }
+                    }
+                }
+
+                return Ok(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
         }
 

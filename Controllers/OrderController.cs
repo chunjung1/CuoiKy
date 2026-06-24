@@ -122,5 +122,39 @@ public class OrderController : Controller
         TempData["SuccessMessage"] = "Hủy đơn hàng thành công!";
         return RedirectToAction(nameof(MyOrders));
     }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ConfirmReceived(int id)
+    {
+        var username = User.Identity?.Name;
+        var email = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Username == username || u.Email == email);
+
+        if (user == null)
+        {
+            return RedirectToAction("Login", "Account");
+        }
+
+        var order = await _dbContext.Orders.FirstOrDefaultAsync(o => o.Id == id && o.UserId == user.Id);
+        if (order == null)
+        {
+            return NotFound();
+        }
+
+        // Chỉ cho phép xác nhận khi đơn hàng ở trạng thái Đang giao hàng (Shipping)
+        if (order.Status != OrderStatus.Shipping)
+        {
+            TempData["ErrorMessage"] = "Trạng thái đơn hàng không hợp lệ để xác nhận.";
+            return RedirectToAction(nameof(Details), new { id = order.Id });
+        }
+
+        order.Status = OrderStatus.Completed;
+        order.PaymentStatus = PaymentStatus.Paid;
+
+        await _dbContext.SaveChangesAsync();
+        TempData["SuccessMessage"] = "Xác nhận đã nhận hàng thành công! Cảm ơn bạn đã mua sắm.";
+        return RedirectToAction(nameof(Details), new { id = order.Id });
+    }
 }
 

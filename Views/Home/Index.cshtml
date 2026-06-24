@@ -95,6 +95,40 @@
         background: #008BFF;
         color: white;
     }
+    .recommendation-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: linear-gradient(135deg, #ff416c, #ff4b2b);
+        color: white;
+        padding: 4px 10px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        border-radius: 20px;
+        box-shadow: 0 4px 10px rgba(255, 75, 43, 0.3);
+        z-index: 10;
+        animation: recommendationPulse 2s infinite;
+    }
+    @@keyframes recommendationPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    .product-card {
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .product-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 20px rgba(0,0,0,0.15) !important;
+    }
+    .recommendation-section-title {
+        border-left: 5px solid #ff4b2b;
+        padding-left: 15px;
+        margin-bottom: 25px;
+        font-weight: bold;
+    }
 </style>
 
 <!-- Hero Section -->
@@ -165,6 +199,60 @@
             </div>
         </div>
     </div>
+
+    <!-- Recommended Products Section -->
+    @if (Model.RecommendedProducts != null && Model.RecommendedProducts.Any())
+    {
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="recommendation-section-title mb-0">Gợi ý dành riêng cho bạn <i class="fas fa-magic text-danger ms-2"></i></h3>
+        </div>
+
+        <div class="latest-products-scroll mb-5">
+            @foreach (var item in Model.RecommendedProducts)
+            {
+                <div class="product-item">
+                    <div class="card h-100 border-0 shadow-sm product-card position-relative">
+                        <div class="recommendation-badge">Dành cho bạn</div>
+                        <div class="product-img-container">
+                            @if (!string.IsNullOrEmpty(item.ImageUrl))
+                            {
+                                <img src="@item.ImageUrl" alt="@item.Name">
+                            }
+                            else
+                            {
+                                <img src="/lib/img/no-image.png" alt="No Image">
+                            }
+                        </div>
+                        <div class="card-body">
+                            <h6 class="card-title text-truncate" title="@item.Name">@item.Name</h6>
+                            @if (item.DiscountPrice.HasValue && item.DiscountPrice.Value < item.Price)
+                            {
+                                <p class="mb-1">
+                                    <span class="text-danger fw-bold me-1">@item.DiscountPrice.Value.ToString("N0")₫</span>
+                                    <span class="text-muted text-decoration-line-through small">@item.Price.ToString("N0")₫</span>
+                                </p>
+                            }
+                            else
+                            {
+                                <p class="text-danger fw-bold mb-1">@item.Price.ToString("N0")₫</p>
+                            }
+                            <div class="d-grid gap-2 mt-3">
+                                <a asp-controller="Product" asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Chi tiết</a>
+                                @if (item.StockQuantity <= 0)
+                                {
+                                    <button type="button" class="btn btn-sm btn-secondary w-100" disabled>Hết hàng</button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn-sm btn-primary w-100" onclick="addToCart(@item.Id)">Thêm vào giỏ hàng</button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
 
     <!-- Featured Products Preview -->
     <div class="d-flex justify-content-between align-items-center mb-4">

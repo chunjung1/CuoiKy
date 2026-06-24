@@ -26,4 +26,9 @@ public class InventoryObserver : IOrderObserver
         }
         _dbContext.SaveChanges();
     }
+
+    public void OnOrderPaid(Order order)
+    {
+        // Không làm gì, tồn kho đã được trừ lúc tạo đơn hàng.
+    }
 }

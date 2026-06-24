@@ -3,6 +3,8 @@ using CuoiKy.Data;
 using CuoiKy.Models;
 using CuoiKy.Patterns;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using PayOS;
+using CuoiKy.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,10 +14,23 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Đăng ký Design Patterns
+builder.Services.AddScoped<ShopeeExpressAdapter>();
+builder.Services.AddScoped<GiaoHangNhanhAdapter>();
 builder.Services.AddScoped<IOrderObserver, InventoryObserver>();
+builder.Services.AddScoped<IOrderObserver, ShippingObserver>();
 builder.Services.AddScoped<CheckoutFacade>();
 builder.Services.AddSingleton<QrServerClient>();
 builder.Services.AddSingleton<IQrCodeGenerator, QrServerQrCodeGenerator>();
+
+// Đăng ký PayOS
+var payOSSettings = builder.Configuration.GetSection("PayOS");
+builder.Services.AddSingleton(new PayOSClient(
+    payOSSettings["ClientId"] ?? "",
+    payOSSettings["ApiKey"] ?? "",
+    payOSSettings["ChecksumKey"] ?? ""
+));
+
+builder.Services.AddSignalR();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -57,6 +72,8 @@ app.MapControllerRoute(
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapHub<ChatHub>("/chatHub");
 
 // Seed data
 using (var scope = app.Services.CreateScope())

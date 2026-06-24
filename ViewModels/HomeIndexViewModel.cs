@@ -6,5 +6,6 @@ public class HomeIndexViewModel
 {
     public List<Category> Categories { get; set; } = new();
     public List<Product> Products { get; set; } = new();
+    public List<Product> RecommendedProducts { get; set; } = new();
 }
 

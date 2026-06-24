@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using CuoiKy.Data;
 using CuoiKy.Models;
 
@@ -8,12 +9,12 @@ namespace CuoiKy.Patterns;
 public class CheckoutFacade
 {
     private readonly ApplicationDbContext _dbContext;
-    private readonly IOrderObserver _inventoryObserver;
+    private readonly IEnumerable<IOrderObserver> _observers;
 
-    public CheckoutFacade(ApplicationDbContext dbContext, IOrderObserver inventoryObserver)
+    public CheckoutFacade(ApplicationDbContext dbContext, IEnumerable<IOrderObserver> observers)
     {
         _dbContext = dbContext;
-        _inventoryObserver = inventoryObserver;
+        _observers = observers;
     }
 
     public void PlaceOrder(Order order)
@@ -49,7 +50,10 @@ public class CheckoutFacade
         _dbContext.Orders.Add(order);
         _dbContext.SaveChanges();
 
-        // Notify inventory observer (trừ tồn kho)
-        _inventoryObserver.OnOrderCreated(order);
+        // Notify all observers
+        foreach (var observer in _observers)
+        {
+            observer.OnOrderCreated(order);
+        }
     }
 }
